@@ -23,7 +23,7 @@ If no arguments are specified, this script will check to see if the data directo
 directory does exist, it will be assumed that the runtime is already installed and skip the
 installation. -i can be used to override this and force the runtime to be reinstalled.
 
-Optionally, one or more mods can be specified at the end to be added to the mod listing."
+Optionally, one or more mods or hacks can be specified at the end to be added to the mod listing."
   echo "$HELP_STRING"
   exit 0
 }
@@ -79,10 +79,17 @@ shift "$((OPTIND-1))"
 # Generate "-mod" arguments for the mod launcher from the arguments passed to the end of this
 # script.
 declare -a MOD_LAUNCHER_ARGUMENTS
-for MOD in "$@"; do
-  MOD_LAUNCHER_ARGUMENTS+=("-mod")
-  # By defualt, Wine maps the Z drive to "/" on the host filesystem.
-  MOD_LAUNCHER_ARGUMENTS+=("Z:$MOD")
+for FILE in "$@"; do
+  FILE_EXTENTION=${FILE##*.}
+  if [[ "$FILE_EXTENTION" = "lmlm" ]]; then
+    MOD_LAUNCHER_ARGUMENTS+=("-mod")
+    # By defualt, Wine maps the Z drive to "/" on the host filesystem.
+    MOD_LAUNCHER_ARGUMENTS+=("Z:$FILE")
+  elif [[ "$FILE_EXTENTION" = "lmlh" ]]; then
+    MOD_LAUNCHER_ARGUMENTS+=("-hack")
+    # By defualt, Wine maps the Z drive to "/" on the host filesystem.
+    MOD_LAUNCHER_ARGUMENTS+=("Z:$FILE")
+  fi
 done
 
 ####################################################################################################
