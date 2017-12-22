@@ -13,6 +13,8 @@ Due to differences between different Linux distributions, no installer is provid
   </tr>
 </table>
 
+**Don't see your distro listed?** Rep your favorite distro by creating a package for it! For info, please see [Recommended Installation Specification](https://github.com/TheKoopaKingdom/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Recommended-Installation-Specification).
+
 ## Usage
 To get started with using *Lucas' Simpsons Hit & Run Mod Launcher Linux Launcher*, here are some things should do:
 - If you plan on using the Vanilla *Simpsons: Hit & Run* launcher, configure your game [working directory](https://github.com/TheKoopaKingdom/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Game-Launcher#working-directories).
