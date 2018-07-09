@@ -6,10 +6,10 @@ print_help()
 {
   # Keep the help string in its own variable because a single quote in a heredoc messes up syntax
   # highlighting.
-  HELP_STRING="\
+  HELP_STRING="
 Usage: $PROGRAM_NAME [-hios] [MOD...]
 Sets up a Wine prefix and directory structure for and launches Lucas' Simpsons Hit & Run Mod
-Launcher.
+Launcher via Wine.
 
   -h    Show this help message and exit.
   -i    Reinitialize the data directory for the mod launcher, even if it already exists.
@@ -23,7 +23,10 @@ If no arguments are specified, this script will check to see if the data directo
 directory does exist, it will be assumed that the runtime is already installed and skip the
 installation. -i can be used to override this and force the runtime to be reinstalled.
 
-Optionally, one or more mods or hacks can be specified at the end to be added to the mod listing."
+Optionally, one or more mods or hacks can be specified at the end to be added to the mod listing.
+
+For more info, see the wiki:
+https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Mod-Launcher-Launcher"
   echo "$HELP_STRING"
   exit 0
 }
