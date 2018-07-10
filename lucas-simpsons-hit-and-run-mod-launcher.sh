@@ -16,6 +16,7 @@ Launcher via Wine.
   -o    If initializing, overwrite the Wine prefix with a new one.
   -s    If initializing, overwrite existing symlinks in the original data directory without
 prompting.
+  -r    Set the mod launcher game executable path registry key, even if it looks to be already set.
 
 If no arguments are specified, this script will check to see if the data directory,
 ~/.local/share/lucas-simpsons-hit-and-run-mod-launcher/, exists, and if not then it will install the
@@ -42,6 +43,46 @@ launch_mod_launcher()
   # may reset the setting.
   winetricks fontsmooth=rgb &> "$LOG_DIRECTORY/winetricks-fontsmooth.log"
 
+  # This regex matches the section of the Wine "reg" registry file where the mod launcher stores the
+  # game EXE path.
+
+  # Whenever it's necessary to input a registry path, eight backslashes are needed, \\\\\\\\. Here's
+  # how it's processed:
+  # - When interpreting this script, Bash escapes each couple of backslashes, becoming \\\\.
+  # - When interpreting the temprary input "reg" file, regedit interprets \x, where x is a
+  # character, as an escape sequence. Therefore, regedit also escapes each couple of backslashes,
+  # becoming \\. I'm not entirely sure why, in the registry, it is stored like this.
+
+  # TODO: Grep's "-z" option separates each line by a null character. This is necessary here to make
+  # a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a NUL. To
+  # get around this, "." is currently used to match the null character, but it might be better to
+  # convert the pattern to that of Perl's and properly match it.
+  grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10}.\
+#time=([0-9]|[a-z]){15}.\
+\"Game EXE Path\"=\".+\".\
+\"Game Path\"=\".+\"" $WINEPREFIX/user.reg
+  if [[ $ALWAYS_SET_EXE_PATH_REGISTRY_KEY = true || $? -ne 0 ]]; then
+    GAME_WORKING_DIRECTORY=$(the-simpsons-hit-and-run.sh -p)
+    if [[ $? -eq 0 ]]; then
+      zenity --width 500 --timeout 5 --info --text "Located a game working directory at \"\
+$GAME_WORKING_DIRECTORY\". Configuring the mod launcher to use it."
+      cat << EOF > $WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
+REGEDIT4
+
+[HKEY_CURRENT_USER\\Software\\Lucas Stuff\\Lucas' Simpsons Hit & Run Tools]
+"Game EXE Path"="$(winepath -w $GAME_WORKING_DIRECTORY/Simpsons.exe | sed -E "s/\\\/\\\\\\\\/g")"
+"Game Path="$(winepath -w $GAME_WORKING_DIRECTORY/Simpsons.exe | sed -E "s/\\\/\\\\\\\\/g")"
+EOF
+      wine regedit $WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
+    else
+      zenity --width 500 --error --text "Failed to locate a game working directory. To learn how \
+to set one up, see the wiki: \
+https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Game-Launcher#working-directories
+Although you can manually select your game executable from the mod launcher interface, it is \
+recommended to setup a working directory."
+    fi
+  fi
+
   # Launch the mod launcher in the background, using taskset to avoid a multicore issue.
   # We don't have to pass a hacks directory because, the way the structure works out, the launcher
   # can already see them anyways.
@@ -56,8 +97,9 @@ launch_mod_launcher()
 FORCE_INIT=false
 OVEWRWRITE_WINE_PREFIX=false
 ALWAYS_OVERWRITE_SYMLINKS=false
+ALWAYS_SET_EXE_PATH_REGISTRY_KEY=false
 
-while getopts "hios" opt; do
+while getopts "hiosr" opt; do
   case $opt in
     h)
       print_help
@@ -70,6 +112,9 @@ while getopts "hios" opt; do
       ;;
     s)
       ALWAYS_OVERWRITE_SYMLINKS=true
+      ;;
+    r)
+      ALWAYS_SET_EXE_PATH_REGISTRY_KEY=true
       ;;
     *)
       print_help
