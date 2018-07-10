@@ -165,7 +165,7 @@ MOD_LAUNCHER_LOG_FILE="$LOG_DIRECTORY/$PACKAGE_NAME.log"
 
 # Architecture for Wine to use. The .NET 3.5 SP1 runtime only works on 32-bit.
 export WINEARCH='win32'
-# Path to the Wine prefix, in the user data directory.0
+# Path to the Wine prefix, in the user data directory.
 export WINEPREFIX="$NEW_USER_DATA_DIRECTORY/wine/"
 
 ####################################################################################################
