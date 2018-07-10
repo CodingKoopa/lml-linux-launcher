@@ -169,7 +169,7 @@ export WINEARCH='win32'
 export WINEPREFIX="$NEW_USER_DATA_DIRECTORY/wine/"
 
 ####################################################################################################
-### Initialization and Execution
+### Initialization and execution.
 ####################################################################################################
 
 # If the user forced initialization via the "-i" argument, or there's no existing user data
