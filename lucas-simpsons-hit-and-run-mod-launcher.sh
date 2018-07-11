@@ -62,7 +62,7 @@ launch_mod_launcher()
 \"Game EXE Path\"=\".+\".\
 \"Game Path\"=\".+\"" $WINEPREFIX/user.reg
   if [[ $ALWAYS_SET_EXE_PATH_REGISTRY_KEY = true || $? -ne 0 ]]; then
-    GAME_WORKING_DIRECTORY=$(the-simpsons-hit-and-run.sh -p)
+    GAME_WORKING_DIRECTORY=$(the-simpsons-hit-and-run -p)
     if [[ $? -eq 0 ]]; then
       zenity --width 500 --timeout 5 --info --text "Located a game working directory at \"\
 $GAME_WORKING_DIRECTORY\". Configuring the mod launcher to use it."
