@@ -71,7 +71,7 @@ REGEDIT4
 
 [HKEY_CURRENT_USER\\Software\\Lucas Stuff\\Lucas' Simpsons Hit & Run Tools]
 "Game EXE Path"="$(winepath -w $GAME_WORKING_DIRECTORY/Simpsons.exe | sed -E "s/\\\/\\\\\\\\/g")"
-"Game Path="$(winepath -w $GAME_WORKING_DIRECTORY | sed -E "s/\\\/\\\\\\\\/g")"
+"Game Path"="$(winepath -w $GAME_WORKING_DIRECTORY | sed -E "s/\\\/\\\\\\\\/g")"
 EOF
       wine regedit $WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
     else
