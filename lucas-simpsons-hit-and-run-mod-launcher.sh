@@ -276,7 +276,7 @@ directory before, you can click \"Yes\"."; then
     else
       echo "# Installing the .NET 3.5 SP1 runtime. This may take a while, use \"tail -f \
 $WINETRICKS_DOTNET35SP1_LOG_FILE\" to track internal status. If the installation hangs on \
-\"Running /usr/bin/wineserver -w.\", run \"WINE_PREFIX=$WINEPREFIX wine taskmgr\", and manually \
+\"Running /usr/bin/wineserver -w.\", run \"WINEPREFIX=$WINEPREFIX wine taskmgr\", and manually \
 close each process. If an unidentified program encounters a fatal error, it's fine to continue the \
 installation."
     fi
