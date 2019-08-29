@@ -27,7 +27,7 @@ installation. -i can be used to override this and force the runtime to be reinst
 Optionally, one or more mods or hacks can be specified at the end to be added to the mod listing.
 
 For more info, see the wiki:
-https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Mod-Launcher-Launcher"
+https://gitlab.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wikis/Mod-Launcher-Launcher"
   echo "$HELP_STRING"
   exit 0
 }
