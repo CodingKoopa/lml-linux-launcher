@@ -17,7 +17,7 @@ could be found.
 First, this script will check to see if the game working directory
 \"~/.local/share/the-simpsons-hit-and-run\" exists, and use it if it does. If not, this script will
 check if \"/usr/share/the-simpsons-hit-and-run\" exists and use that. If no working directory was
-found, an error will be outputted and 1 will be returned..
+found, an error will be outputted and 1 will be returned.
 
 For more info, see the wiki:
 https://gitlab.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wikis/Game-Launcher"
