@@ -63,7 +63,7 @@ launch_mod_launcher()
   # a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a NUL. To
   # get around this, "." is currently used to match the null character, but it might be better to
   # convert the pattern to that of Perl's and properly match it.
-  grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10}.\
+  grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10} [0-9]{7}.\
 #time=([0-9]|[a-z]){15}.\
 \"Game EXE Path\"=\".+\".\
 \"Game Path\"=\".+\"" $WINEPREFIX/user.reg
