@@ -26,6 +26,12 @@ installation. -i can be used to override this and force the runtime to be reinst
 
 Optionally, one or more mods or hacks can be specified at the end to be added to the mod listing.
 
+In regards to the mod launcher executable, this script will check to see if the mod launcher
+executable \"~/.local/share/lucas-simpsons-hit-and-run-mod-launcher/launcher/*.exe\" exists, and use
+it if it does. If not, this script will check if
+\"/usr/share/lucas-simpsons-hit-and-run-mod-launcher/*.exe\" exists and use that. If no executable
+was found, an error will be outputted and 1 will be returned.
+
 For more info, see the wiki:
 https://gitlab.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wikis/Mod-Launcher-Launcher"
   echo "$HELP_STRING"
@@ -147,12 +153,9 @@ done
 # Suggested package name, reused for most of this launcher's support files.
 PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
 
-# Path to mod launcher executable in the system library folder.
-MOD_LAUNCHER_EXECUTABLE="/usr/lib/$PACKAGE_NAME/$PACKAGE_NAME.exe"
 # Path to the directory where the mod launcher expects its user files to be. We will be symlinking
 # the subdirectories here to NEW_USER_DATA_DIRECTORY.
 ORIGINAL_USER_DATA_DIRECTORY="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher"
-
 # Path to directory in the user's home folder for storing user specific data.
 NEW_USER_DATA_DIRECTORY="$HOME/.local/share/$PACKAGE_NAME"
 # Path to directory within the user data directory for storing logs. This is something specific to
@@ -162,6 +165,31 @@ LOG_DIRECTORY="$NEW_USER_DATA_DIRECTORY/logs"
 WINE_WINEBOOT_LOG_FILE="$LOG_DIRECTORY/wine-wineboot.log"
 # Path to the log fike for the mod launcher.
 MOD_LAUNCHER_LOG_FILE="$LOG_DIRECTORY/$PACKAGE_NAME.log"
+
+function lazy-glob
+{
+  for FILE in $1; do
+    break
+  done
+  if [[ "$FILE" != "$1" ]]; then
+    echo "$FILE"
+  fi
+}
+# Path to mod launcher executable in the user file folder.
+USER_MOD_LAUNCHER_EXECUTABLE=$(lazy-glob "$NEW_USER_DATA_DIRECTORY/launcher/*.exe")
+# Path to mod launcher executable in the system library folder.
+SYSTEM_MOD_LAUNCHER_EXECUTABLE=$(lazy-glob "/usr/lib/$PACKAGE_NAME/*.exe")
+
+if [[ -f "$USER_MOD_LAUNCHER_EXECUTABLE" ]]; then
+  MOD_LAUNCHER_EXECUTABLE=$USER_MOD_LAUNCHER_EXECUTABLE
+elif [[ -f "$SYSTEM_MOD_LAUNCHER_EXECUTABLE" ]]; then
+  MOD_LAUNCHER_EXECUTABLE=$SYSTEM_MOD_LAUNCHER_EXECUTABLE
+else
+  zenity --title "Lucas' Simpsons Hit & Run Mod Launcher" --width 500 --error --text "Lucas' \
+Simpsons Hit &amp; Run Mod Launcher executable not found. This package was likely incorrectly \
+installed."
+  exit 1
+fi
 
 # Architecture for Wine to use. The .NET 3.5 SP1 runtime only works on 32-bit.
 export WINEARCH='win32'
