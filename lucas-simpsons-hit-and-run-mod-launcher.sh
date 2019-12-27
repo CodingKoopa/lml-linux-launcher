@@ -210,78 +210,83 @@ if [[ "$FORCE_INIT" = true || ! -d "$NEW_USER_DATA_DIRECTORY" ]]; then
   )
   # First time initialization subshell, with progress tracked by Zenity's progress bar.
   (
-    echo "# Making data directory structure."
+    if zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Would you like to symbolically \
+link the original mod launcher user data \"${ORIGINAL_USER_DATA_DIRECTORY/&/&amp;}\" to the new \
+user data subdirectory \"$NEW_USER_DATA_DIRECTORY\"? If a Windows installation is also using \
+this Documents directory, this will break it."; then
+      echo "# Making data directory structure."
 
-    # If the mod launcher has never before been ran, its original directory won't exist.
-    mkdir -p "$ORIGINAL_USER_DATA_DIRECTORY"
-    # Use -p to not throw an error if the directory already exists, in the case of forced
-    # initialization.
-    mkdir -p "$NEW_USER_DATA_DIRECTORY"
+      # If the mod launcher has never before been ran, its original directory won't exist.
+      mkdir -p "$ORIGINAL_USER_DATA_DIRECTORY"
+      # Use -p to not throw an error if the directory already exists, in the case of forced
+      # initialization.
+      mkdir -p "$NEW_USER_DATA_DIRECTORY"
 
-    # Paths to the normal mod launcher directories that will be linked to the user's data directory.
-    declare -A LINKED_DATA_PATHS=(
-      ["$NEW_USER_DATA_DIRECTORY/crashes/"]="$ORIGINAL_USER_DATA_DIRECTORY/Crashes"
-      ["$NEW_USER_DATA_DIRECTORY/mods/"]="$ORIGINAL_USER_DATA_DIRECTORY/Mods"
-      ["$NEW_USER_DATA_DIRECTORY/saves/"]="$ORIGINAL_USER_DATA_DIRECTORY/Saved Games"
-      ["$NEW_USER_DATA_DIRECTORY/screenshots/"]="$ORIGINAL_USER_DATA_DIRECTORY/Screenshots"
-    )
+      # Paths to the normal mod launcher directories that will be linked to the user's data directory.
+      declare -A LINKED_DATA_PATHS=(
+        ["$NEW_USER_DATA_DIRECTORY/crashes/"]="$ORIGINAL_USER_DATA_DIRECTORY/Crashes"
+        ["$NEW_USER_DATA_DIRECTORY/mods/"]="$ORIGINAL_USER_DATA_DIRECTORY/Mods"
+        ["$NEW_USER_DATA_DIRECTORY/saves/"]="$ORIGINAL_USER_DATA_DIRECTORY/Saved Games"
+        ["$NEW_USER_DATA_DIRECTORY/screenshots/"]="$ORIGINAL_USER_DATA_DIRECTORY/Screenshots"
+      )
 
-    for NEW_USER_DATA_SUBDIRECTORY in "${!LINKED_DATA_PATHS[@]}"; do
-      ORIGINAL_USER_DATA_SUBDIRECTORY=${LINKED_DATA_PATHS[$NEW_USER_DATA_SUBDIRECTORY]}
+      for NEW_USER_DATA_SUBDIRECTORY in "${!LINKED_DATA_PATHS[@]}"; do
+        ORIGINAL_USER_DATA_SUBDIRECTORY=${LINKED_DATA_PATHS[$NEW_USER_DATA_SUBDIRECTORY]}
 
-      echo "# Linking original mod launcher data directory \"$ORIGINAL_USER_DATA_SUBDIRECTORY\" to \
-new data directory $NEW_USER_DATA_SUBDIRECTORY."
+        echo "# Linking original mod launcher data directory \"$ORIGINAL_USER_DATA_SUBDIRECTORY\" to \
+  new data directory $NEW_USER_DATA_SUBDIRECTORY."
 
-      # Define the arguments to be passed to "ln" becuase we'll be appending to them later.
-      LN_ARGS="-sT"
-      # Options to change linking behavior.
-      SKIP_LINK=false
-      OVERWRITE_LINK=false
+        # Define the arguments to be passed to "ln" becuase we'll be appending to them later.
+        LN_ARGS="-sT"
+        # Options to change linking behavior.
+        SKIP_LINK=false
+        OVERWRITE_LINK=false
 
-      # If there's already a preexisting mod launcher subdirectory that's not a symlink.
-      if [[ -d "$ORIGINAL_USER_DATA_SUBDIRECTORY" && ! -L "$ORIGINAL_USER_DATA_SUBDIRECTORY" ]]; \
-            then
-        # If there's already a new user mod launcher file/directory/whatever.
-        if [[ -e "$NEW_USER_DATA_SUBDIRECTORY" ]]; then
-          if zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Both original mod launcher \
-user data subdirectory \"${ORIGINAL_USER_DATA_SUBDIRECTORY/&/&amp;}\" and new user data \
-subdirectory \"$NEW_USER_DATA_SUBDIRECTORY\" already exist. Do you want to use the existing new \
-user data subdirectory (\"$NEW_USER_DATA_SUBDIRECTORY\")?"; then
-            rm -rf "$ORIGINAL_USER_DATA_SUBDIRECTORY"
-          else
-            rm -rf "$NEW_USER_DATA_SUBDIRECTORY"
-            mv "$ORIGINAL_USER_DATA_SUBDIRECTORY" "$NEW_USER_DATA_SUBDIRECTORY"
+        # If there's already a preexisting mod launcher subdirectory that's not a symlink.
+        if [[ -d "$ORIGINAL_USER_DATA_SUBDIRECTORY" && ! -L "$ORIGINAL_USER_DATA_SUBDIRECTORY" ]]; \
+              then
+          # If there's already a new user mod launcher file/directory/whatever.
+          if [[ -e "$NEW_USER_DATA_SUBDIRECTORY" ]]; then
+            if zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Both original mod launcher \
+  user data subdirectory \"${ORIGINAL_USER_DATA_SUBDIRECTORY/&/&amp;}\" and new user data \
+  subdirectory \"$NEW_USER_DATA_SUBDIRECTORY\" already exist. Do you want to use the existing new \
+  user data subdirectory (\"$NEW_USER_DATA_SUBDIRECTORY\")?"; then
+              rm -rf "$ORIGINAL_USER_DATA_SUBDIRECTORY"
+            else
+              rm -rf "$NEW_USER_DATA_SUBDIRECTORY"
+              mv "$ORIGINAL_USER_DATA_SUBDIRECTORY" "$NEW_USER_DATA_SUBDIRECTORY"
+            fi
           fi
-        fi
 
-      # If there's a symlink/file where preexisting mod launcher data would be. -e isn't used
-      # because it doesn't include broken symlinks.
-      elif [[ -f "$ORIGINAL_USER_DATA_SUBDIRECTORY" || -L "$ORIGINAL_USER_DATA_SUBDIRECTORY" ]]; then
-        if [[ "$ALWAYS_OVERWRITE_SYMLINKS" = true ]] || zenity "${ZENITY_COMMON_ARGUMENTS[@]}" \
-            --question --text "Symlink or file at \"${ORIGINAL_USER_DATA_SUBDIRECTORY/&/&amp;}\" \
-already exists. Do you want to replace it? If you're rerunning this after intializing the new \
-directory before, you can click \"Yes\"."; then
-          OVERWRITE_LINK=true
-          mkdir -p "$NEW_USER_DATA_SUBDIRECTORY"
+        # If there's a symlink/file where preexisting mod launcher data would be. -e isn't used
+        # because it doesn't include broken symlinks.
+        elif [[ -f "$ORIGINAL_USER_DATA_SUBDIRECTORY" || -L "$ORIGINAL_USER_DATA_SUBDIRECTORY" ]]; then
+          if [[ "$ALWAYS_OVERWRITE_SYMLINKS" = true ]] || zenity "${ZENITY_COMMON_ARGUMENTS[@]}" \
+              --question --text "Symlink or file at \"${ORIGINAL_USER_DATA_SUBDIRECTORY/&/&amp;}\" \
+  already exists. Do you want to replace it? If you're rerunning this after intializing the new \
+  directory before, you can click \"Yes\"."; then
+            OVERWRITE_LINK=true
+            mkdir -p "$NEW_USER_DATA_SUBDIRECTORY"
+          else
+            SKIP_LINK=true
+          fi
+
+        # If there's no preexisting original mod launcher data.
         else
-          SKIP_LINK=true
+          mkdir -p "$NEW_USER_DATA_SUBDIRECTORY"
         fi
 
-      # If there's no preexisting original mod launcher data.
-      else
-        mkdir -p "$NEW_USER_DATA_SUBDIRECTORY"
-      fi
+        if [[ $OVERWRITE_LINK = true ]]; then
+          LN_ARGS+="f"
+        fi
 
-      if [[ $OVERWRITE_LINK = true ]]; then
-        LN_ARGS+="f"
-      fi
-
-      if [[ $SKIP_LINK = false ]]; then
-        # Link the directory where the mod launcher expects its data to be to our new data
-        # directory.
-        ln "$LN_ARGS" "$NEW_USER_DATA_SUBDIRECTORY" "$ORIGINAL_USER_DATA_SUBDIRECTORY"
-      fi
-    done
+        if [[ $SKIP_LINK = false ]]; then
+          # Link the directory where the mod launcher expects its data to be to our new data
+          # directory.
+          ln "$LN_ARGS" "$NEW_USER_DATA_SUBDIRECTORY" "$ORIGINAL_USER_DATA_SUBDIRECTORY"
+        fi
+      done
+    fi
 
     # Our logging directory is independent of the mod launcher's original data directories.
     mkdir -p "$LOG_DIRECTORY"
