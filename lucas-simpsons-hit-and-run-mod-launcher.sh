@@ -191,7 +191,7 @@ installed."
   exit 1
 fi
 
-# Architecture for Wine to use. The .NET 3.5 SP1 runtime only works on 32-bit.
+# Architecture for Wine to use. The .NET 3.5 runtime only works on 32-bit.
 export WINEARCH='win32'
 # Path to the Wine prefix, in the user data directory.
 export WINEPREFIX="$HOME/.local/share/wineprefixes/$PACKAGE_NAME"
@@ -299,28 +299,28 @@ this Documents directory, this will break it."; then
     echo "# Booting up Wine."
     wineboot &> "$WINE_WINEBOOT_LOG_FILE"
 
-    # Path to the log file for when Winetricks is installing the .NET 3.5 SP1 runtime.
-    WINETRICKS_DOTNET35SP1_LOG_FILE="$LOG_DIRECTORY/winetricks-dotnet35sp1.log"
+    # Path to the log file for when Winetricks is installing the .NET 3.5 runtime.
+    WINETRICKS_DOTNET35_LOG_FILE="$LOG_DIRECTORY/winetricks-dotnet35.log"
 
-    SKIP_WINETRICKS_DOTNET35SP1=false
-    if [[ $(winetricks list-installed) == *"dotnet35sp1"* ]]; then
-      echo "# Skipping .NET 3.5 SP1 runtime installation."
-      SKIP_WINETRICKS_DOTNET35SP1=true
+    SKIP_WINETRICKS_DOTNET35=false
+    if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
+      echo "# Skipping .NET 3.5 runtime installation."
+      SKIP_WINETRICKS_DOTNET35=true
     else
-      echo "# Installing the .NET 3.5 SP1 runtime. This may take a while, use \"tail -f \
-$WINETRICKS_DOTNET35SP1_LOG_FILE\" to track internal status. If the installation hangs on \
+      echo "# Installing the .NET 3.5 runtime. This may take a while, use \"tail -f \
+$WINETRICKS_DOTNET35_LOG_FILE\" to track internal status. If the installation hangs on \
 \"Running /usr/bin/wineserver -w.\", run \"WINEPREFIX=$WINEPREFIX wine taskmgr\", and manually \
 close each process. If an unidentified program encounters a fatal error, it's fine to continue the \
 installation."
     fi
 
-    if [[ "$SKIP_WINETRICKS_DOTNET35SP1" = true ]] || winetricks dotnet35sp1 &> \
-        "$WINETRICKS_DOTNET35SP1_LOG_FILE" ; then
+    if [[ "$SKIP_WINETRICKS_DOTNET35" = true ]] || winetricks dotnet35 &> \
+        "$WINETRICKS_DOTNET35_LOG_FILE" ; then
       echo "# Launching the mod launcher."
       launch_mod_launcher
     else
-      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the .NET 3.5 SP1 \
-runtime. See \"$WINETRICKS_DOTNET35SP1_LOG_FILE\" for more info."
+      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the .NET 3.5 \
+runtime. See \"$WINETRICKS_DOTNET35_LOG_FILE\" for more info."
       echo "# An error occured while initializing Lucas' Simpsons Hit & Run Mod Launcher. To \
 reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -io\"."
     fi
