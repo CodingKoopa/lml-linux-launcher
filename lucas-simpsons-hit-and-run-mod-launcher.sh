@@ -2,8 +2,7 @@
 
 PROGRAM_NAME=${0##*/}
 
-print_help()
-{
+print_help() {
   # Keep the help string in its own variable because a single quote in a heredoc messes up syntax
   # highlighting.
   HELP_STRING="
@@ -36,16 +35,15 @@ https://gitlab.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-lau
   exit 0
 }
 
-launch_mod_launcher()
-{
+launch_mod_launcher() {
   # Technically, wineboot is executed both on a normal run and during the first time initialization,
   # but this one doesn't really warrant its own Zenity progress bar because Wine booting after the
   # prefix has been created is unsignifigant enough to not really matter, it's pretty quick.
-  wineboot &> "$WINE_WINEBOOT_LOG_FILE"
+  wineboot &>"$WINE_WINEBOOT_LOG_FILE"
 
   # Enable font smoothing. Running this every launch is suboptimal, but necessary because winecfg
   # may reset the setting.
-  winetricks fontsmooth=rgb &> "$LOG_DIRECTORY/winetricks-fontsmooth.log"
+  winetricks fontsmooth=rgb &>"$LOG_DIRECTORY/winetricks-fontsmooth.log"
 
   # This regex matches the section of the Wine "reg" registry file where the mod launcher stores the
   # game EXE path.
@@ -70,7 +68,7 @@ launch_mod_launcher()
     if [[ $? -eq 0 ]]; then
       zenity --width 500 --timeout 5 --info --text "Located a game working directory at \"\
 $GAME_WORKING_DIRECTORY\". Configuring the mod launcher to use it."
-      cat << EOF > $WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
+      cat <<EOF >$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
 REGEDIT4
 
 [HKEY_CURRENT_USER\\Software\\Lucas Stuff\\Lucas' Simpsons Hit & Run Tools]
@@ -91,7 +89,7 @@ recommended to setup a working directory."
   # We don't have to pass a hacks directory because, the way the structure works out, the launcher
   # can already see them anyways.
   taskset -c 0 wine "$MOD_LAUNCHER_EXECUTABLE" -mods "Z:/usr/share/$PACKAGE_NAME/mods/" \
-      "${MOD_LAUNCHER_ARGUMENTS[@]}" &> "$MOD_LAUNCHER_LOG_FILE" &
+    "${MOD_LAUNCHER_ARGUMENTS[@]}" &>"$MOD_LAUNCHER_LOG_FILE" &
 }
 
 ####################################################################################################
@@ -100,7 +98,6 @@ recommended to setup a working directory."
 
 FORCE_INIT=false
 OVEWRWRITE_WINE_PREFIX=false
-ALWAYS_OVERWRITE_SYMLINKS=false
 ALWAYS_SET_EXE_PATH_REGISTRY_KEY=false
 
 while getopts "hiosr" opt; do
@@ -123,7 +120,7 @@ while getopts "hiosr" opt; do
   esac
 done
 # Shift the options over to the mod list.
-shift "$((OPTIND-1))"
+shift "$((OPTIND - 1))"
 
 # Generate "-mod" arguments for the mod launcher from the arguments passed to the end of this
 # script.
@@ -156,8 +153,7 @@ WINE_WINEBOOT_LOG_FILE="$LOG_DIRECTORY/wine-wineboot.log"
 # Path to the log fike for the mod launcher.
 MOD_LAUNCHER_LOG_FILE="$LOG_DIRECTORY/$PACKAGE_NAME.log"
 
-function lazy-glob
-{
+function lazy-glob() {
   for FILE in $1; do
     break
   done
@@ -195,8 +191,8 @@ export WINEPREFIX="$HOME/.local/share/wineprefixes/$PACKAGE_NAME"
 if [[ "$FORCE_INIT" = true || ! -d "$NEW_USER_DATA_DIRECTORY" ]]; then
   # Arguments passed to Zenity that are always the same.
   ZENITY_COMMON_ARGUMENTS=(
-      --title "Lucas' Simpsons Hit & Run Mod Launcher First Time Initialization"
-      --width 500
+    --title "Lucas' Simpsons Hit & Run Mod Launcher First Time Initialization"
+    --width 500
   )
   # First time initialization subshell, with progress tracked by Zenity's progress bar.
   (
@@ -209,7 +205,7 @@ if [[ "$FORCE_INIT" = true || ! -d "$NEW_USER_DATA_DIRECTORY" ]]; then
     fi
 
     echo "# Booting up Wine."
-    wineboot &> "$WINE_WINEBOOT_LOG_FILE"
+    wineboot &>"$WINE_WINEBOOT_LOG_FILE"
 
     # Path to the log file for when Winetricks is installing the .NET 3.5 runtime.
     WINETRICKS_DOTNET35_LOG_FILE="$LOG_DIRECTORY/winetricks-dotnet35.log"
@@ -227,7 +223,7 @@ installation."
     fi
 
     if [[ "$SKIP_WINETRICKS_DOTNET35" = true ]] || winetricks dotnet35 &> \
-        "$WINETRICKS_DOTNET35_LOG_FILE" ; then
+      "$WINETRICKS_DOTNET35_LOG_FILE"; then
       echo "# Launching the mod launcher."
       launch_mod_launcher
     else
@@ -239,7 +235,7 @@ reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -io\"."
 
     echo EOF
   ) |
-  zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --pulsate
+    zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --pulsate
 else
   # It's possible the logs have been cleared.
   mkdir -p "$LOG_DIRECTORY"

@@ -1,0 +1,37 @@
+# Define the stages.
+stages:
+  # Create a static code analysis stage.
+  - analyze
+
+analysis:ec:
+  # Add to the analysis stage.
+  stage: analyze
+  # Use the latest ec Docker image.
+  image: mstruebing/editorconfig-checker:latest
+  script:
+    # Check that all text complies with the EditorConfig file.
+    - ec
+
+analysis:shfmt:
+  # Add to the analysis stage.
+  stage: analyze
+  # Use the latest Alpine Linux shfmt Docker image.
+  image: mvdan/shfmt:latest-alpine
+  rules:
+    - changes:
+        - "*.sh"
+  script:
+    # Check that all Bash code has proper formatting.
+    - shfmt -d .
+
+analysis:shellcheck:
+  # Add to the analysis stage.
+  stage: analyze
+  # Use the latest stable shellchecl Docker image.
+  image: koalaman/shellcheck-alpine:stable
+  rules:
+    - changes:
+        - "*.sh"
+  script:
+    # Check that all Bash code is proper.
+    - shellcheck -x *.sh

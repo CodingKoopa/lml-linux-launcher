@@ -2,8 +2,7 @@
 
 PROGRAM_NAME=${0##*/}
 
-print_help()
-{
+print_help() {
   # Keep the help string in its own variable because a single quote in a heredoc messes up syntax
   # highlighting.
   HELP_STRING="
@@ -33,19 +32,19 @@ PRINT_PATH=false
 
 while getopts "hp" opt; do
   case $opt in
-    h)
-      print_help
-      ;;
-    p)
-      PRINT_PATH=true
-      ;;
-    *)
-      print_help
-      ;;
+  h)
+    print_help
+    ;;
+  p)
+    PRINT_PATH=true
+    ;;
+  *)
+    print_help
+    ;;
   esac
 done
 # Shift the options over to the mod list.
-shift "$((OPTIND-1))"
+shift "$((OPTIND - 1))"
 
 ####################################################################################################
 ### Common variables.
