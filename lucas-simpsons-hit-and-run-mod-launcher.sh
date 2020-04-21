@@ -14,8 +14,6 @@ Launcher via Wine.
   -h    Show this help message and exit.
   -i    Reinitialize the data directory for the mod launcher, even if it already exists.
   -o    If initializing, overwrite the Wine prefix with a new one.
-  -s    If initializing, overwrite existing symlinks in the original data directory without
-prompting.
   -r    Set the mod launcher game executable path registry key, even if it looks to be already set.
 
 If no arguments are specified, this script will check to see if the data directory,
@@ -107,24 +105,21 @@ ALWAYS_SET_EXE_PATH_REGISTRY_KEY=false
 
 while getopts "hiosr" opt; do
   case $opt in
-    h)
-      print_help
-      ;;
-    i)
-      FORCE_INIT=true
-      ;;
-    o)
-      OVEWRWRITE_WINE_PREFIX=true
-      ;;
-    s)
-      ALWAYS_OVERWRITE_SYMLINKS=true
-      ;;
-    r)
-      ALWAYS_SET_EXE_PATH_REGISTRY_KEY=true
-      ;;
-    *)
-      print_help
-      ;;
+  h)
+    print_help
+    ;;
+  i)
+    FORCE_INIT=true
+    ;;
+  o)
+    OVEWRWRITE_WINE_PREFIX=true
+    ;;
+  r)
+    ALWAYS_SET_EXE_PATH_REGISTRY_KEY=true
+    ;;
+  *)
+    print_help
+    ;;
   esac
 done
 # Shift the options over to the mod list.
@@ -153,14 +148,9 @@ done
 # Suggested package name, reused for most of this launcher's support files.
 PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
 
-# Path to the directory where the mod launcher expects its user files to be. We will be symlinking
-# the subdirectories here to NEW_USER_DATA_DIRECTORY.
-ORIGINAL_USER_DATA_DIRECTORY="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher"
-# Path to directory in the user's home folder for storing user specific data.
-NEW_USER_DATA_DIRECTORY="$HOME/.local/share/$PACKAGE_NAME"
 # Path to directory within the user data directory for storing logs. This is something specific to
 # this Linux launcher, and is not a part of the original mod launcher.
-LOG_DIRECTORY="$NEW_USER_DATA_DIRECTORY/logs"
+LOG_DIRECTORY="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Logs"
 # Path to the log file for when Wine is booting up.
 WINE_WINEBOOT_LOG_FILE="$LOG_DIRECTORY/wine-wineboot.log"
 # Path to the log fike for the mod launcher.
@@ -210,84 +200,6 @@ if [[ "$FORCE_INIT" = true || ! -d "$NEW_USER_DATA_DIRECTORY" ]]; then
   )
   # First time initialization subshell, with progress tracked by Zenity's progress bar.
   (
-    if zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Would you like to symbolically \
-link the original mod launcher user data \"${ORIGINAL_USER_DATA_DIRECTORY/&/&amp;}\" to the new \
-user data subdirectory \"$NEW_USER_DATA_DIRECTORY\"? If a Windows installation is also using \
-this Documents directory, this will break it."; then
-      echo "# Making data directory structure."
-
-      # If the mod launcher has never before been ran, its original directory won't exist.
-      mkdir -p "$ORIGINAL_USER_DATA_DIRECTORY"
-      # Use -p to not throw an error if the directory already exists, in the case of forced
-      # initialization.
-      mkdir -p "$NEW_USER_DATA_DIRECTORY"
-
-      # Paths to the normal mod launcher directories that will be linked to the user's data directory.
-      declare -A LINKED_DATA_PATHS=(
-        ["$NEW_USER_DATA_DIRECTORY/crashes/"]="$ORIGINAL_USER_DATA_DIRECTORY/Crashes"
-        ["$NEW_USER_DATA_DIRECTORY/mods/"]="$ORIGINAL_USER_DATA_DIRECTORY/Mods"
-        ["$NEW_USER_DATA_DIRECTORY/saves/"]="$ORIGINAL_USER_DATA_DIRECTORY/Saved Games"
-        ["$NEW_USER_DATA_DIRECTORY/screenshots/"]="$ORIGINAL_USER_DATA_DIRECTORY/Screenshots"
-      )
-
-      for NEW_USER_DATA_SUBDIRECTORY in "${!LINKED_DATA_PATHS[@]}"; do
-        ORIGINAL_USER_DATA_SUBDIRECTORY=${LINKED_DATA_PATHS[$NEW_USER_DATA_SUBDIRECTORY]}
-
-        echo "# Linking original mod launcher data directory \"$ORIGINAL_USER_DATA_SUBDIRECTORY\" to \
-  new data directory $NEW_USER_DATA_SUBDIRECTORY."
-
-        # Define the arguments to be passed to "ln" becuase we'll be appending to them later.
-        LN_ARGS="-sT"
-        # Options to change linking behavior.
-        SKIP_LINK=false
-        OVERWRITE_LINK=false
-
-        # If there's already a preexisting mod launcher subdirectory that's not a symlink.
-        if [[ -d "$ORIGINAL_USER_DATA_SUBDIRECTORY" && ! -L "$ORIGINAL_USER_DATA_SUBDIRECTORY" ]]; \
-              then
-          # If there's already a new user mod launcher file/directory/whatever.
-          if [[ -e "$NEW_USER_DATA_SUBDIRECTORY" ]]; then
-            if zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Both original mod launcher \
-  user data subdirectory \"${ORIGINAL_USER_DATA_SUBDIRECTORY/&/&amp;}\" and new user data \
-  subdirectory \"$NEW_USER_DATA_SUBDIRECTORY\" already exist. Do you want to use the existing new \
-  user data subdirectory (\"$NEW_USER_DATA_SUBDIRECTORY\")?"; then
-              rm -rf "$ORIGINAL_USER_DATA_SUBDIRECTORY"
-            else
-              rm -rf "$NEW_USER_DATA_SUBDIRECTORY"
-              mv "$ORIGINAL_USER_DATA_SUBDIRECTORY" "$NEW_USER_DATA_SUBDIRECTORY"
-            fi
-          fi
-
-        # If there's a symlink/file where preexisting mod launcher data would be. -e isn't used
-        # because it doesn't include broken symlinks.
-        elif [[ -f "$ORIGINAL_USER_DATA_SUBDIRECTORY" || -L "$ORIGINAL_USER_DATA_SUBDIRECTORY" ]]; then
-          if [[ "$ALWAYS_OVERWRITE_SYMLINKS" = true ]] || zenity "${ZENITY_COMMON_ARGUMENTS[@]}" \
-              --question --text "Symlink or file at \"${ORIGINAL_USER_DATA_SUBDIRECTORY/&/&amp;}\" \
-  already exists. Do you want to replace it? If you're rerunning this after intializing the new \
-  directory before, you can click \"Yes\"."; then
-            OVERWRITE_LINK=true
-            mkdir -p "$NEW_USER_DATA_SUBDIRECTORY"
-          else
-            SKIP_LINK=true
-          fi
-
-        # If there's no preexisting original mod launcher data.
-        else
-          mkdir -p "$NEW_USER_DATA_SUBDIRECTORY"
-        fi
-
-        if [[ $OVERWRITE_LINK = true ]]; then
-          LN_ARGS+="f"
-        fi
-
-        if [[ $SKIP_LINK = false ]]; then
-          # Link the directory where the mod launcher expects its data to be to our new data
-          # directory.
-          ln "$LN_ARGS" "$NEW_USER_DATA_SUBDIRECTORY" "$ORIGINAL_USER_DATA_SUBDIRECTORY"
-        fi
-      done
-    fi
-
     # Our logging directory is independent of the mod launcher's original data directories.
     mkdir -p "$LOG_DIRECTORY"
 
