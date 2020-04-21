@@ -59,23 +59,23 @@ launch_mod_launcher() {
   # a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a NUL. To
   # get around this, "." is currently used to match the null character, but it might be better to
   # convert the pattern to that of Perl's and properly match it.
-  grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10} [0-9]{7}.\
+  if [[ $ALWAYS_SET_EXE_PATH_REGISTRY_KEY = true ]] ||
+    grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10} [0-9]{7}.\
 #time=([0-9]|[a-z]){15}.\
 \"Game EXE Path\"=\".+\".\
-\"Game Path\"=\".+\"" $WINEPREFIX/user.reg
-  if [[ $ALWAYS_SET_EXE_PATH_REGISTRY_KEY = true || $? -ne 0 ]]; then
-    GAME_WORKING_DIRECTORY=$(the-simpsons-hit-and-run -p)
-    if [[ $? -eq 0 ]]; then
+\"Game Path\"=\".+\"" "$WINEPREFIX/user.reg"; then
+
+    if GAME_WORKING_DIRECTORY=$(the-simpsons-hit-and-run -p); then
       zenity --width 500 --timeout 5 --info --text "Located a game working directory at \"\
 $GAME_WORKING_DIRECTORY\". Configuring the mod launcher to use it."
-      cat <<EOF >$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
+      cat <<EOF >"$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg"
 REGEDIT4
 
 [HKEY_CURRENT_USER\\Software\\Lucas Stuff\\Lucas' Simpsons Hit & Run Tools]
-"Game EXE Path"="$(winepath -w $GAME_WORKING_DIRECTORY/Simpsons.exe | sed -E "s/\\\/\\\\\\\\/g")"
-"Game Path"="$(winepath -w $GAME_WORKING_DIRECTORY | sed -E "s/\\\/\\\\\\\\/g")"
+"Game EXE Path"="$(winepath -w "$GAME_WORKING_DIRECTORY/Simpsons.exe" | sed -E "s/\\\/\\\\\\\\/g")"
+"Game Path"="$(winepath -w "$GAME_WORKING_DIRECTORY" | sed -E "s/\\\/\\\\\\\\/g")"
 EOF
-      wine regedit $WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
+      wine regedit "$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg"
     else
       zenity --width 500 --error --text "Failed to locate a game working directory. To learn how \
 to set one up, see the wiki: \
