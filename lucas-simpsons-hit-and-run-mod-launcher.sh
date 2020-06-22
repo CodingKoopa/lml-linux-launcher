@@ -30,7 +30,7 @@ it if it does. If not, this script will check if
 was found, an error will be outputted and 1 will be returned.
 
 For more info, see the wiki:
-https://gitlab.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wikis/Mod-Launcher-Launcher"
+https://gitlab.com/CodingKoopa/lml-linux-launcher/wikis/Mod-Launcher-Launcher"
   echo "$HELP_STRING"
   exit 0
 }
@@ -60,8 +60,8 @@ launch_mod_launcher() {
   # get around this, "." is currently used to match the null character, but it might be better to
   # convert the pattern to that of Perl's and properly match it.
   if [[ $ALWAYS_SET_EXE_PATH_REGISTRY_KEY = true ]] ||
-    grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10} [0-9]{7}.\
-#time=([0-9]|[a-z]){15}.\
+    grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10} \
+[0-9]{7}.#time=([0-9]|[a-z]){15}.\
 \"Game EXE Path\"=\".+\".\
 \"Game Path\"=\".+\"" "$WINEPREFIX/user.reg"; then
 

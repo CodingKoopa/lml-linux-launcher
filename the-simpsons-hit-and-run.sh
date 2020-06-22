@@ -19,7 +19,7 @@ check if \"/usr/share/the-simpsons-hit-and-run\" exists and use that. If no work
 found, an error will be outputted and 1 will be returned.
 
 For more info, see the wiki:
-https://gitlab.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wikis/Game-Launcher"
+https://gitlab.com/CodingKoopa/lml-linux-launcher/wikis/Game-Launcher"
   echo "$HELP_STRING"
   exit 0
 }
