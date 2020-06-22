@@ -79,7 +79,7 @@ EOF
     else
       zenity --width 500 --error --text "Failed to locate a game working directory. To learn how \
 to set one up, see the wiki: \
-https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Game-Launcher#working-directories
+https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories
 Although you can manually select your game executable from the mod launcher interface, it is \
 recommended to setup a working directory."
     fi

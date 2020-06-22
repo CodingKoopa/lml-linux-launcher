@@ -13,36 +13,36 @@ Due to differences between different Linux distributions, no installer is provid
   </tr>
 </table>
 
-**Don't see your distro listed?** Rep your favorite distro by creating a package for it! For info, please see [Recommended Installation Specification](https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Recommended-Installation-Specification).
+**Don't see your distro listed?** Rep your favorite distro by creating a package for it! For info, please see [Recommended Installation Specification](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Recommended-Installation-Specification).
 
 ## Usage
 To get started with using *Lucas' Simpsons Hit & Run Mod Launcher Linux Launcher*, here are some things should do:
-- Configure a game [working directory](https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Game-Launcher#working-directories).
+- Configure a game [working directory](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories).
 - Start the *Lucas' Simpsons Hit & Run Mod Launcher* launcher to enter first time initialization. There will be several .NET installers, go through them and install all of the runtimes.
 - If you have saved games or mods you would like to import, move them to the *Lucas' Simpsons Hit & Run Mod Launcher* launcher working directory, `/.local/share/lucas-simpsons-hit-and-run-mod-launcher`. Afterwards, run `check-for-duplicate-lmlms` to remove duplicate default mods leftover from the source mod folder.
 
 ## Features
-This section is meant as an informal introduction to what this Linux launcher offers. Complete technical documentation is available on the [wiki](https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki).
+This section is meant as an informal introduction to what this Linux launcher offers. Complete technical documentation is available on the [wiki](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Home).
 
 ### Launcher Scripts
 Included are two [Bash](https://www.gnu.org/software/bash/) launcher scripts , one for *Lucas' Simpsons Hit & Run Mod Launcher* and one for *The Simpsons: Hit & Run* itself, the original game. These launchers manage the internals of the mod launcher and game for you, to ensure a smooth experience. They are also designed to do things "the linux way". The mod launcher in particular constructs a directory layout, using symlinks to redirect the traditional Windows `C:\Users\<USER>\Documents\My Games...` path to the `.local` directory in your home directory. Furthermore, the mod launcher accepts hacks and mods as parameters for convinience.
 
-For more info, see [Mod Launcher Launcher](https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Mod-Launcher-Launcher) and [Game Launcher](https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Game-Launcher) on the wiki.
+For more info, see [Mod Launcher Launcher](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Mod-Launcher-Launcher) and [Game Launcher](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher) on the wiki.
 
 ### MIME Types
 The `LMLM` and `LMLH` file types are foriegn to Linux, so this launcher bundles a MIME type `XML` to handle any files with these extentions.
 
-For more info, see [MIME Types](https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/MIME-Types).
+For more info, see [MIME Types](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/MIME-Types).
 
 ### Desktop Entries
 To allow starting the launchers from your desktop environemnt as if it were any other application, this comes with desktop entries, including support for the MIME types.
 
-For more info, see [Desktop Entries](https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Desktop-Entries).
+For more info, see [Desktop Entries](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Desktop-Entries).
 
 ### Duplicate LMLM Checker
 As a result of splitting up your mods into a system directory (for default mods) and user directory (for user added mods), you may have some leftover default mods into your user directory. To help keep your user mod directory clean, the duplicate LMLM checker fixes this for you.
 
-For more info, see [Duplicate LMLM Checker](https://github.com/CodingKoopa/lucas-simpsons-hit-and-run-mod-launcher-linux-launcher/wiki/Duplicate-LMLM-Checker).
+For more info, see [Duplicate LMLM Checker](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Duplicate-LMLM-Checker).
 
 ## Compatability
 This section will detail how well the mod launcher and game run with Wine.
