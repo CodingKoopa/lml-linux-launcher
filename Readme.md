@@ -27,7 +27,7 @@ This section is meant as an informal introduction to what this Linux launcher of
 ### Launcher Scripts
 Included are two [Bash](https://www.gnu.org/software/bash/) launcher scripts , one for *Lucas' Simpsons Hit & Run Mod Launcher* and one for *The Simpsons: Hit & Run* itself, the original game. These launchers manage the internals of the mod launcher and game for you, to ensure a smooth experience. They are also designed to do things "the linux way". The mod launcher in particular constructs a directory layout, using symlinks to redirect the traditional Windows `C:\Users\<USER>\Documents\My Games...` path to the `.local` directory in your home directory. Furthermore, the mod launcher accepts hacks and mods as parameters for convinience.
 
-For more info, see [Mod Launcher Launcher](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Mod-Launcher-Launcher) and [Game Launcher](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher) on the wiki.
+For more info, see the [Mod Launcher Launcher](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Mod-Launcher-Launcher) page on the wiki.
 
 ### MIME Types
 The `LMLM` and `LMLH` file types are foriegn to Linux, so this launcher bundles a MIME type `XML` to handle any files with these extentions.
