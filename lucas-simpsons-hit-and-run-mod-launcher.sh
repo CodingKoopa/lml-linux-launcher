@@ -3,10 +3,7 @@
 PROGRAM_NAME=${0##*/}
 
 print_help() {
-  # Keep the help string in its own variable because a single quote in a heredoc messes up syntax
-  # highlighting.
-  HELP_STRING="
-Usage: $PROGRAM_NAME [-hios] [MOD...]
+  echo "Usage: $PROGRAM_NAME [-hios] [MOD...]
 Sets up a Wine prefix and directory structure for and launches Lucas' Simpsons Hit & Run Mod
 Launcher via Wine.
 
@@ -31,8 +28,6 @@ was found, an error will be outputted and 1 will be returned.
 
 For more info, see the wiki:
 https://gitlab.com/CodingKoopa/lml-linux-launcher/wikis/Mod-Launcher-Launcher"
-  echo "$HELP_STRING"
-  exit 0
 }
 
 launch_mod_launcher() {
