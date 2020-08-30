@@ -44,7 +44,7 @@ function lml_linux_launcher() {
   # Shift the options over to the mod list.
   shift "$((OPTIND - 1))"
 
-  local -r ZENITY_COMMON_ARGUMENTS=(
+  local -ra ZENITY_COMMON_ARGUMENTS=(
     --title "Lucas' Simpsons Hit & Run Mod Launcher First Time Initialization"
     --width 500
   )
