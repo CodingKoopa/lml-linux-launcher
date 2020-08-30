@@ -30,7 +30,7 @@ function lml_linux_launcher() {
   while getopts "vidr" opt; do
     case $opt in
     v)
-      echo "Lucas' Simpsons Hit and Run Mod Launcher Linux Launcher v0.1.0"
+      echo "Lucas' Simpsons Hit and Run Mod Launcher Linux Launcher v0.1.1"
       echo "https://gitlab.com/CodingKoopa/lml-linux-launcher"
       return 0
       ;;
