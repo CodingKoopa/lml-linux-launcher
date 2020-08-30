@@ -201,11 +201,11 @@ file handled by the mod launcher, ignoring."
     fi
   done
 
-  # Launch the mod launcher in the background, using taskset to avoid a multicore issue.
+  # Launch the mod launcher.
   # We don't have to pass a hacks directory because, the way the structure works out, the launcher
   # can already see them anyways.
-  taskset -c 0 wine "$MOD_LAUNCHER_EXECUTABLE" -mods "Z:/usr/share/$PACKAGE_NAME/mods/" \
-    "${mod_launcher_arguments[@]}" &>"$launcher_log" &
+  wine "$MOD_LAUNCHER_EXECUTABLE" -mods "Z:/usr/share/$PACKAGE_NAME/mods/" \
+    "${mod_launcher_arguments[@]}" &>"$launcher_log"
 }
 
 lml_linux_launcher "$@"
