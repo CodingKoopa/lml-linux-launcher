@@ -1,12 +1,13 @@
 #!/bin/bash
 
 print_help() {
-  echo "Usage: ${0##*/} [-hios] [MOD...]
+  echo "Usage: ${0##*/} [-hidr] [MOD/HACK...]
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
   -h    Show this help message and exit.
-  -i    Force the initialization of the Wine prefix, deleting the existing one if present.
-  -r    Set the mod launcher game executable path registry key, even if it looks to be already set.
+  -i    Force the initialization of the Wine prefix.
+  -d    If initializing, force the deletion of the existing prefix, if present.
+  -r    Force the setting of the mod launcher game executable path registry key.
 
 If no arguments are specified, this script will check to see if the Wine prefix
 ~/.local/share/lucas-simpsons-hit-and-run-mod-launcher exists. If it doesn't exist, it will be
@@ -15,8 +16,7 @@ to it. If it does exist, or if it has just been installed, the mod launcher will
 
 Optionally, one or more mods or hacks can be specified at the end to be added to the mod listing.
 
-For more info, see the wiki:
-https://gitlab.com/CodingKoopa/lml-linux-launcher/wikis/Mod-Launcher-Launcher"
+For more info, see the wiki: https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/"
 }
 
 function lml_linux_launcher() {
