@@ -26,7 +26,7 @@ function lml_linux_launcher() {
   local force_delete_prefix=false
   local always_set_registry_key=false
 
-  while getopts "hidr" opt; do
+  while getopts "idr" opt; do
     case $opt in
     i)
       force_init=true
