@@ -5,6 +5,7 @@ print_help() {
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
   -h    Show this help message and exit.
+  -v    Print the version of this script.
   -i    Force the initialization of the Wine prefix.
   -d    If initializing, force the deletion of the existing prefix, if present.
   -r    Force the setting of the mod launcher game executable path registry key.
@@ -26,8 +27,13 @@ function lml_linux_launcher() {
   local force_delete_prefix=false
   local always_set_registry_key=false
 
-  while getopts "idr" opt; do
+  while getopts "vidr" opt; do
     case $opt in
+    v)
+      echo "Lucas' Simpsons Hit and Run Mod Launcher Linux Launcher v0.1.0"
+      echo "https://gitlab.com/CodingKoopa/lml-linux-launcher"
+      return 0
+      ;;
     i)
       force_init=true
       ;;
