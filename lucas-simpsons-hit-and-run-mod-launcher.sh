@@ -71,9 +71,9 @@ file handled by the mod launcher, ignoring."
   # this Linux launcher, and is not a part of the original mod launcher.
   local -r log_dir="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Logs"
   # Path to the log file for when Wine is booting up.
-  local -r wineboot_log_file="$log_dir/wine-wineboot.log"
+  local -r wineboot_log="$log_dir/wine-wineboot.log"
   # Path to the log file for the mod launcher.
-  local -r launcher_log_file="$log_dir/$PACKAGE_NAME.log"
+  local -r launcher_log="$log_dir/$PACKAGE_NAME.log"
 
   # Path to mod launcher executable in the system library folder.
   local -r MOD_LAUNCHER_EXECUTABLE="/usr/lib/$PACKAGE_NAME/$PACKAGE_NAME.exe"
@@ -88,7 +88,7 @@ may not be correctly installed."
   # Architecture for Wine to use. The .NET 3.5 runtime only works on 32-bit.
   export WINEARCH='win32'
   # Path to the Wine prefix, in the user data directory.
-  export WINEPREFIX="$HOME/.local/share/wineprefixes/$PACKAGE_NAME"
+  export WINEPREFIX="$HOME/.wine"
 
   # First, initialize the Wine prefix if we have to.
 
@@ -105,22 +105,22 @@ may not be correctly installed."
     # First time initialization subshell, with progress tracked by Zenity's progress bar.
     (
       echo "# Booting up Wine."
-      wineboot &>"$wineboot_log_file"
+      wineboot &>"$wineboot_log"
 
       # Path to the log file for when Winetricks is installing the .NET 3.5 runtime.
-      local -r dotnet35_log_file="$log_dir/winetricks-dotnet35.log"
+      local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
 
       if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
         echo "# Microsoft .NET 3.5 is already installed, skipping.."
       else
         echo "# Installing the Microsoft .NET 3.5 runtime. This may take a while, use \"tail -f \
-$dotnet35_log_file\" to track internal status. If the installation hangs on \
+$dotnet35_log\" to track internal status. If the installation hangs on \
 \"Running /usr/bin/wineserver -w.\", run \"WINEPREFIX=$WINEPREFIX wine taskmgr\", and manually \
 close each process. If an unidentified program encounters a fatal error, it's fine to continue the \
 installation."
-        if ! winetricks dotnet35 &>"$dotnet35_log_file"; then
+        if ! winetricks dotnet35 &>"$dotnet35_log"; then
           zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the Microsoft \
-.NET 3.5 runtime. See \"$dotnet35_log_file\" for more info."
+.NET 3.5 runtime. See \"$dotnet35_log\" for more info."
           echo "# An error occured while initializing Lucas' Simpsons Hit & Run Mod Launcher. To \
 reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
         fi
@@ -136,7 +136,7 @@ reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
   # Technically, wineboot is executed both on a normal run and during the first time initialization,
   # but this one doesn't really warrant its own Zenity progress bar because Wine booting after the
   # prefix has been created is unsignifigant enough to not really matter, it's pretty quick.
-  wineboot &>"$wineboot_log_file"
+  wineboot &>"$wineboot_log"
 
   # Enable font smoothing. Running this every launch is suboptimal, but necessary because winecfg
   # may reset the setting.
@@ -188,7 +188,7 @@ recommended to setup a working directory."
   # We don't have to pass a hacks directory because, the way the structure works out, the launcher
   # can already see them anyways.
   taskset -c 0 wine "$MOD_LAUNCHER_EXECUTABLE" -mods "Z:/usr/share/$PACKAGE_NAME/mods/" \
-    "${mod_launcher_arguments[@]}" &>"$launcher_log_file" &
+    "${mod_launcher_arguments[@]}" &>"$launcher_log" &
 }
 
 lml_linux_launcher "$@"
