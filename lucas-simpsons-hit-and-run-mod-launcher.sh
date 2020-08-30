@@ -10,10 +10,10 @@ Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
   -d    If initializing, force the deletion of the existing prefix, if present.
   -r    Force the setting of the mod launcher game executable path registry key.
 
-If no arguments are specified, this script will check to see if the Wine prefix
-~/.local/share/lucas-simpsons-hit-and-run-mod-launcher exists. If it doesn't exist, it will be
-created using wineboot. Then, Microsoft's implementation of the .NET 3.5 runtime will be installed
-to it. If it does exist, or if it has just been installed, the mod launcher will be launched.
+When ran, this script will check to see if the Wine prefix ~/.local/share/lucas-simpsons-hit-and-run
+-mod-launcher exists. If it doesn't exist, it will be created using wineboot. Then, Microsoft's
+implementation of the .NET 3.5 runtime will be installed to it. If it does exist, or if it has just
+been installed, the mod launcher will be launched.
 
 When launching the game, if ~/.local/share/the-simpsons-hit-and-run or
 /usr/share/the-simpsons-hit-and-run exist (in that order), they will be used to set the path to
