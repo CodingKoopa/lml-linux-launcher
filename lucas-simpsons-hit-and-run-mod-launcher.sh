@@ -51,21 +51,6 @@ function lml_linux_launcher() {
     --width 500
   )
 
-  # Generate arguments for the mod launcher from the arguments passed to the end of this script.
-  local -a mod_launcher_arguments
-  for file in "$@"; do
-    local extension=${file##*.}
-    if [[ "$extension" = "lmlm" ]]; then
-      # By defualt, Wine maps the Z drive to "/" on the host filesystem.
-      mod_launcher_arguments+=(-mod Z:"$file")
-    elif [[ "$extension" = "lmlh" ]]; then
-      mod_launcher_arguments+=(-hack Z:"$file")
-    else
-      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "File \"$file\" not recognized as a \
-file handled by the mod launcher, ignoring."
-    fi
-  done
-
   # Suggested package name, reused for most of this launcher's support files.
   local -r PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
 
@@ -194,6 +179,21 @@ may manually set the game path in the mod launcher interface."
   fi
 
   # Finally, launch Wine with the mod launcher executable.
+
+  # Generate arguments for the mod launcher from the arguments passed to the end of this script.
+  local -a mod_launcher_arguments
+  for file in "$@"; do
+    local extension=${file##*.}
+    if [[ "$extension" = "lmlm" ]]; then
+      # By defualt, Wine maps the Z drive to "/" on the host filesystem.
+      mod_launcher_arguments+=(-mod Z:"$file")
+    elif [[ "$extension" = "lmlh" ]]; then
+      mod_launcher_arguments+=(-hack Z:"$file")
+    else
+      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "File \"$file\" not recognized as a \
+file handled by the mod launcher, ignoring."
+    fi
+  done
 
   # Launch the mod launcher in the background, using taskset to avoid a multicore issue.
   # We don't have to pass a hacks directory because, the way the structure works out, the launcher
