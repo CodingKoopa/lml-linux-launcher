@@ -1,9 +1,7 @@
 #!/bin/bash
 
-PROGRAM_NAME=${0##*/}
-
 print_help() {
-  echo "Usage: $PROGRAM_NAME [-hios] [MOD...]
+  echo "Usage: ${0##*/} [-hios] [MOD...]
 Sets up a Wine prefix and directory structure for and launches Lucas' Simpsons Hit & Run Mod
 Launcher via Wine.
 
