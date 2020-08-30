@@ -72,7 +72,7 @@ may not be correctly installed."
     return 1
   fi
 
-  # Architecture for Wine to use. The .NET 3.5 runtime only works on 32-bit.
+  # Architecture for Wine to use. The mod launcher only works on 32-bit.
   export WINEARCH='win32'
   # Path to the Wine prefix, in the user data directory.
   export WINEPREFIX="$HOME/.wine"
@@ -82,19 +82,19 @@ may not be correctly installed."
   # If the user forced initialization via the "-i" argument, or there's no existing user data
   # directory.
   if [[ "$force_init" = true || ! -d "$WINEPREFIX" ]]; then
-    # We haven't yet started the mod launcher, so this directory probably doesn't exist yet.
     mkdir -p "$log_dir"
 
     # Remove the Wine prefix, if specfied.
     if [[ "$force_delete_prefix" = true ]]; then
       rm -rf "$WINEPREFIX"
     fi
-    # First time initialization subshell, with progress tracked by Zenity's progress bar.
+
+    # Prefix initialization subshell, with progress tracked by Zenity's progress bar.
     (
       echo "# Booting up Wine."
       wineboot &>"$wineboot_log"
 
-      # Path to the log file for when Winetricks is installing the .NET 3.5 runtime.
+      # Path to the log file for when Winetricks is installing the MS .NET 3.5 runtime.
       local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
 
       if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
@@ -121,9 +121,9 @@ reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
 
   # Then, do some house keeping with the Wine prefix.
 
-  # Technically, wineboot is executed both on a normal run and during the first time initialization,
+  # Technically, wineboot is executed both on a normal run and during the prefix initialization,
   # but this one doesn't really warrant its own Zenity progress bar because Wine booting after the
-  # prefix has been created is unsignifigant enough to not really matter, it's pretty quick.
+  # prefix has been created is unsignificant enough to not really matter.
   wineboot &>"$wineboot_log"
 
   # Enable font smoothing. Running this every launch is suboptimal, but necessary because winecfg
