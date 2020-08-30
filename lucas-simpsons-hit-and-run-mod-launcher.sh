@@ -14,7 +14,9 @@ If no arguments are specified, this script will check to see if the Wine prefix
 created using wineboot. Then, Microsoft's implementation of the .NET 3.5 runtime will be installed
 to it. If it does exist, or if it has just been installed, the mod launcher will be launched.
 
-Optionally, one or more mods or hacks can be specified at the end to be added to the mod listing.
+When launching the game, if ~/.local/share/the-simpsons-hit-and-run or
+/usr/share/the-simpsons-hit-and-run exist (in that order), they will be used to set the path to
+Simpsons.exe automatically.
 
 For more info, see the wiki: https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/"
 }
@@ -163,23 +165,31 @@ reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
 \"Game EXE Path\"=\".+\".\
 \"Game Path\"=\".+\"" "$WINEPREFIX/user.reg"; then
 
-    if GAME_WORKING_DIRECTORY=$(the-simpsons-hit-and-run -p); then
+    user_shar_directory=$HOME/.local/share/the-simpsons-hit-and-run
+    system_shar_directory=/usr/share/the-simpsons-hit-and-run
+    if [[ -d $user_shar_directory ]]; then
+      shar_directory=$user_shar_directory
+    elif [[ -d $system_shar_directory ]]; then
+      shar_directory=$system_shar_directory
+    fi
+
+    if [[ -d $shar_directory ]]; then
       zenity --width 500 --timeout 5 --info --text "Located a game working directory at \"\
-$GAME_WORKING_DIRECTORY\". Configuring the mod launcher to use it."
-      cat <<EOF >"$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg"
+$shar_directory\". Configuring the mod launcher to use it."
+      reg=$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
+      cat <<EOF >"$reg"
 REGEDIT4
 
 [HKEY_CURRENT_USER\\Software\\Lucas Stuff\\Lucas' Simpsons Hit & Run Tools]
-"Game EXE Path"="$(winepath -w "$GAME_WORKING_DIRECTORY/Simpsons.exe" | sed -E "s/\\\/\\\\\\\\/g")"
-"Game Path"="$(winepath -w "$GAME_WORKING_DIRECTORY" | sed -E "s/\\\/\\\\\\\\/g")"
+"Game EXE Path"="$(winepath -w "$shar_directory/Simpsons.exe" | sed -E "s/\\\/\\\\\\\\/g")"
+"Game Path"="$(winepath -w "$shar_directory" | sed -E "s/\\\/\\\\\\\\/g")"
 EOF
-      wine regedit "$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg"
+      wine regedit "$reg"
     else
-      zenity --width 500 --error --text "Failed to locate a game working directory. To learn how \
-to set one up, see the wiki: \
-https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories
-Although you can manually select your game executable from the mod launcher interface, it is \
-recommended to setup a working directory."
+      zenity --width 500 --error --text "Failed to find SHAR directory to use. To learn how to set \
+to set this up, see the wiki: \
+https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories. You \
+may manually set the game path in the mod launcher interface."
     fi
   fi
 
