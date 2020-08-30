@@ -54,13 +54,10 @@ function lml_linux_launcher() {
   for file in "$@"; do
     local extension=${file##*.}
     if [[ "$extension" = "lmlm" ]]; then
-      mod_launcher_arguments+=("-mod")
       # By defualt, Wine maps the Z drive to "/" on the host filesystem.
-      mod_launcher_arguments+=("Z:$file")
+      mod_launcher_arguments+=(-mod Z:"$file")
     elif [[ "$extension" = "lmlh" ]]; then
-      mod_launcher_arguments+=("-hack")
-      # By defualt, Wine maps the Z drive to "/" on the host filesystem.
-      mod_launcher_arguments+=("Z:$file")
+      mod_launcher_arguments+=(-hack Z:"$file")
     else
       zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "File \"$file\" not recognized as a \
 file handled by the mod launcher, ignoring."
