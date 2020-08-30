@@ -87,153 +87,153 @@ recommended to setup a working directory."
     "${MOD_LAUNCHER_ARGUMENTS[@]}" &>"$MOD_LAUNCHER_LOG_FILE" &
 }
 
-####################################################################################################
-### Argument parsing.
-####################################################################################################
+function lml_linux_launcher() {
+  local FORCE_INIT=false
+  local OVEWRWRITE_WINE_PREFIX=false
+  local ALWAYS_SET_EXE_PATH_REGISTRY_KEY=false
 
-FORCE_INIT=false
-OVEWRWRITE_WINE_PREFIX=false
-ALWAYS_SET_EXE_PATH_REGISTRY_KEY=false
-
-while getopts "hiosr" opt; do
-  case $opt in
-  h)
-    print_help
-    ;;
-  i)
-    FORCE_INIT=true
-    ;;
-  o)
-    OVEWRWRITE_WINE_PREFIX=true
-    ;;
-  r)
-    ALWAYS_SET_EXE_PATH_REGISTRY_KEY=true
-    ;;
-  *)
-    print_help
-    ;;
-  esac
-done
-# Shift the options over to the mod list.
-shift "$((OPTIND - 1))"
-
-# Generate "-mod" arguments for the mod launcher from the arguments passed to the end of this
-# script.
-declare -a MOD_LAUNCHER_ARGUMENTS
-for FILE in "$@"; do
-  FILE_EXTENTION=${FILE##*.}
-  if [[ "$FILE_EXTENTION" = "lmlm" ]]; then
-    MOD_LAUNCHER_ARGUMENTS+=("-mod")
-    # By defualt, Wine maps the Z drive to "/" on the host filesystem.
-    MOD_LAUNCHER_ARGUMENTS+=("Z:$FILE")
-  elif [[ "$FILE_EXTENTION" = "lmlh" ]]; then
-    MOD_LAUNCHER_ARGUMENTS+=("-hack")
-    # By defualt, Wine maps the Z drive to "/" on the host filesystem.
-    MOD_LAUNCHER_ARGUMENTS+=("Z:$FILE")
-  fi
-done
-
-####################################################################################################
-### Common variables.
-####################################################################################################
-
-# Suggested package name, reused for most of this launcher's support files.
-PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
-
-# Path to directory within the user data directory for storing logs. This is something specific to
-# this Linux launcher, and is not a part of the original mod launcher.
-LOG_DIRECTORY="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Logs"
-# Path to the log file for when Wine is booting up.
-WINE_WINEBOOT_LOG_FILE="$LOG_DIRECTORY/wine-wineboot.log"
-# Path to the log fike for the mod launcher.
-MOD_LAUNCHER_LOG_FILE="$LOG_DIRECTORY/$PACKAGE_NAME.log"
-
-function lazy-glob() {
-  for FILE in $1; do
-    break
+  while getopts "hiosr" opt; do
+    case $opt in
+    h)
+      print_help
+      ;;
+    i)
+      FORCE_INIT=true
+      ;;
+    o)
+      OVEWRWRITE_WINE_PREFIX=true
+      ;;
+    r)
+      ALWAYS_SET_EXE_PATH_REGISTRY_KEY=true
+      ;;
+    *)
+      print_help
+      ;;
+    esac
   done
-  if [[ "$FILE" != "$1" ]]; then
-    echo "$FILE"
-  fi
-}
-# Path to mod launcher executable in the user file folder.
-USER_MOD_LAUNCHER_EXECUTABLE=$(lazy-glob "$NEW_USER_DATA_DIRECTORY/launcher/*.exe")
-# Path to mod launcher executable in the system library folder.
-SYSTEM_MOD_LAUNCHER_EXECUTABLE=$(lazy-glob "/usr/lib/$PACKAGE_NAME/*.exe")
+  # Shift the options over to the mod list.
+  shift "$((OPTIND - 1))"
 
-if [[ -f "$USER_MOD_LAUNCHER_EXECUTABLE" ]]; then
-  MOD_LAUNCHER_EXECUTABLE=$USER_MOD_LAUNCHER_EXECUTABLE
-elif [[ -f "$SYSTEM_MOD_LAUNCHER_EXECUTABLE" ]]; then
-  MOD_LAUNCHER_EXECUTABLE=$SYSTEM_MOD_LAUNCHER_EXECUTABLE
-else
-  zenity --title "Lucas' Simpsons Hit & Run Mod Launcher" --width 500 --error --text "Lucas' \
+  # Generate "-mod" arguments for the mod launcher from the arguments passed to the end of this
+  # script.
+  local -a MOD_LAUNCHER_ARGUMENTS
+  for FILE in "$@"; do
+    local FILE_EXTENTION=${FILE##*.}
+    if [[ "$FILE_EXTENTION" = "lmlm" ]]; then
+      MOD_LAUNCHER_ARGUMENTS+=("-mod")
+      # By defualt, Wine maps the Z drive to "/" on the host filesystem.
+      MOD_LAUNCHER_ARGUMENTS+=("Z:$FILE")
+    elif [[ "$FILE_EXTENTION" = "lmlh" ]]; then
+      MOD_LAUNCHER_ARGUMENTS+=("-hack")
+      # By defualt, Wine maps the Z drive to "/" on the host filesystem.
+      MOD_LAUNCHER_ARGUMENTS+=("Z:$FILE")
+    fi
+  done
+
+  ####################################################################################################
+  ### Common variables.
+  ####################################################################################################
+
+  # Suggested package name, reused for most of this launcher's support files.
+  local -r PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
+
+  # Path to directory within the user data directory for storing logs. This is something specific to
+  # this Linux launcher, and is not a part of the original mod launcher.
+  local -r LOG_DIRECTORY="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Logs"
+  # Path to the log file for when Wine is booting up.
+  local -r WINE_WINEBOOT_LOG_FILE="$LOG_DIRECTORY/wine-wineboot.log"
+  # Path to the log fike for the mod launcher.
+  local -r MOD_LAUNCHER_LOG_FILE="$LOG_DIRECTORY/$PACKAGE_NAME.log"
+
+  function lazy-glob() {
+    for FILE in $1; do
+      break
+    done
+    if [[ "$FILE" != "$1" ]]; then
+      echo "$FILE"
+    fi
+  }
+  # Path to mod launcher executable in the user file folder.
+  local -r USER_MOD_LAUNCHER_EXECUTABLE=$(lazy-glob "$NEW_USER_DATA_DIRECTORY/launcher/*.exe")
+  # Path to mod launcher executable in the system library folder.
+  local -r SYSTEM_MOD_LAUNCHER_EXECUTABLE=$(lazy-glob "/usr/lib/$PACKAGE_NAME/*.exe")
+
+  if [[ -f "$USER_MOD_LAUNCHER_EXECUTABLE" ]]; then
+    local -r MOD_LAUNCHER_EXECUTABLE=$USER_MOD_LAUNCHER_EXECUTABLE
+  elif [[ -f "$SYSTEM_MOD_LAUNCHER_EXECUTABLE" ]]; then
+    local -r MOD_LAUNCHER_EXECUTABLE=$SYSTEM_MOD_LAUNCHER_EXECUTABLE
+  else
+    zenity --title "Lucas' Simpsons Hit & Run Mod Launcher" --width 500 --error --text "Lucas' \
 Simpsons Hit &amp; Run Mod Launcher executable not found. This package was likely incorrectly \
 installed."
-  exit 1
-fi
+    exit 1
+  fi
 
-# Architecture for Wine to use. The .NET 3.5 runtime only works on 32-bit.
-export WINEARCH='win32'
-# Path to the Wine prefix, in the user data directory.
-export WINEPREFIX="$HOME/.local/share/wineprefixes/$PACKAGE_NAME"
+  # Architecture for Wine to use. The .NET 3.5 runtime only works on 32-bit.
+  export WINEARCH='win32'
+  # Path to the Wine prefix, in the user data directory.
+  export WINEPREFIX="$HOME/.local/share/wineprefixes/$PACKAGE_NAME"
 
-####################################################################################################
-### Initialization and execution.
-####################################################################################################
+  ####################################################################################################
+  ### Initialization and execution.
+  ####################################################################################################
 
-# If the user forced initialization via the "-i" argument, or there's no existing user data
-# directory.
-if [[ "$FORCE_INIT" = true || ! -d "$NEW_USER_DATA_DIRECTORY" ]]; then
-  # Arguments passed to Zenity that are always the same.
-  ZENITY_COMMON_ARGUMENTS=(
-    --title "Lucas' Simpsons Hit & Run Mod Launcher First Time Initialization"
-    --width 500
-  )
-  # First time initialization subshell, with progress tracked by Zenity's progress bar.
-  (
-    # Our logging directory is independent of the mod launcher's original data directories.
-    mkdir -p "$LOG_DIRECTORY"
+  # If the user forced initialization via the "-i" argument, or there's no existing user data
+  # directory.
+  if [[ "$FORCE_INIT" = true || ! -d "$NEW_USER_DATA_DIRECTORY" ]]; then
+    # Arguments passed to Zenity that are always the same.
+    local -r ZENITY_COMMON_ARGUMENTS=(
+      --title "Lucas' Simpsons Hit & Run Mod Launcher First Time Initialization"
+      --width 500
+    )
+    # First time initialization subshell, with progress tracked by Zenity's progress bar.
+    (
+      # Our logging directory is independent of the mod launcher's original data directories.
+      mkdir -p "$LOG_DIRECTORY"
 
-    # Remove the Wine prefix, if specfied.
-    if [[ "$OVEWRWRITE_WINE_PREFIX" = true ]]; then
-      rm -rf "$WINEPREFIX"
-    fi
+      # Remove the Wine prefix, if specfied.
+      if [[ "$OVEWRWRITE_WINE_PREFIX" = true ]]; then
+        rm -rf "$WINEPREFIX"
+      fi
 
-    echo "# Booting up Wine."
-    wineboot &>"$WINE_WINEBOOT_LOG_FILE"
+      echo "# Booting up Wine."
+      wineboot &>"$WINE_WINEBOOT_LOG_FILE"
 
-    # Path to the log file for when Winetricks is installing the .NET 3.5 runtime.
-    WINETRICKS_DOTNET35_LOG_FILE="$LOG_DIRECTORY/winetricks-dotnet35.log"
+      # Path to the log file for when Winetricks is installing the .NET 3.5 runtime.
+      local -r WINETRICKS_DOTNET35_LOG_FILE="$LOG_DIRECTORY/winetricks-dotnet35.log"
 
-    SKIP_WINETRICKS_DOTNET35=false
-    if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
-      echo "# Skipping .NET 3.5 runtime installation."
-      SKIP_WINETRICKS_DOTNET35=true
-    else
-      echo "# Installing the .NET 3.5 runtime. This may take a while, use \"tail -f \
+      local -r SKIP_WINETRICKS_DOTNET35=false
+      if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
+        echo "# Skipping .NET 3.5 runtime installation."
+        local -r SKIP_WINETRICKS_DOTNET35=true
+      else
+        echo "# Installing the .NET 3.5 runtime. This may take a while, use \"tail -f \
 $WINETRICKS_DOTNET35_LOG_FILE\" to track internal status. If the installation hangs on \
 \"Running /usr/bin/wineserver -w.\", run \"WINEPREFIX=$WINEPREFIX wine taskmgr\", and manually \
 close each process. If an unidentified program encounters a fatal error, it's fine to continue the \
 installation."
-    fi
+      fi
 
-    if [[ "$SKIP_WINETRICKS_DOTNET35" = true ]] || winetricks dotnet35 &> \
-      "$WINETRICKS_DOTNET35_LOG_FILE"; then
-      echo "# Launching the mod launcher."
-      launch_mod_launcher
-    else
-      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the .NET 3.5 \
+      if [[ "$SKIP_WINETRICKS_DOTNET35" = true ]] || winetricks dotnet35 &> \
+        "$WINETRICKS_DOTNET35_LOG_FILE"; then
+        echo "# Launching the mod launcher."
+        launch_mod_launcher
+      else
+        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the .NET 3.5 \
 runtime. See \"$WINETRICKS_DOTNET35_LOG_FILE\" for more info."
-      echo "# An error occured while initializing Lucas' Simpsons Hit & Run Mod Launcher. To \
+        echo "# An error occured while initializing Lucas' Simpsons Hit & Run Mod Launcher. To \
 reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -io\"."
-    fi
+      fi
 
-    echo EOF
-  ) |
-    zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --pulsate
-else
-  # It's possible the logs have been cleared.
-  mkdir -p "$LOG_DIRECTORY"
+      echo EOF
+    ) |
+      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --pulsate
+  else
+    # It's possible the logs have been cleared.
+    mkdir -p "$LOG_DIRECTORY"
 
-  launch_mod_launcher
-fi
+    launch_mod_launcher
+  fi
+}
+
+lml_linux_launcher "$@"
