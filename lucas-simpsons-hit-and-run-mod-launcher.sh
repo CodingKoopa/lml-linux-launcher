@@ -123,6 +123,7 @@ installation."
 .NET 3.5 runtime. See \"$dotnet35_log\" for more info."
           echo "# An error occured while initializing Lucas' Simpsons Hit & Run Mod Launcher. To \
 reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
+          return 1
         fi
       fi
 
