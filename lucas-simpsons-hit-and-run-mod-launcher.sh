@@ -73,7 +73,7 @@ file handled by the mod launcher, ignoring."
   # Path to the log file for when Wine is booting up.
   local -r wineboot_log="$log_dir/wine-wineboot.log"
   # Path to the log file for the mod launcher.
-  local -r launcher_log="$log_dir/$PACKAGE_NAME.log"
+  local -r launcher_log="$log_dir/wine-$PACKAGE_NAME.log"
 
   # Path to mod launcher executable in the system library folder.
   local -r MOD_LAUNCHER_EXECUTABLE="/usr/lib/$PACKAGE_NAME/$PACKAGE_NAME.exe"
