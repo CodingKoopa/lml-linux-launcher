@@ -135,9 +135,7 @@ function lml_linux_launcher() {
   # this Linux launcher, and is not a part of the original mod launcher.
   local -r LOG_DIRECTORY="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Logs"
   # Path to the log file for when Wine is booting up.
-  local -r WINE_WINEBOOT_LOG_FILE="$LOG_DIRECTORY/wine-wineboot.log"
-  # Path to the log fike for the mod launcher.
-  local -r MOD_LAUNCHER_LOG_FILE="$LOG_DIRECTORY/$PACKAGE_NAME.log"
+  # Path to the log file for the mod launcher.
 
   function lazy-glob() {
     for FILE in $1; do
