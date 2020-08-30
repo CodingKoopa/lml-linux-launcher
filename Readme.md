@@ -13,16 +13,18 @@ Due to differences between different Linux distributions, no installer is provid
   </tr>
 </table>
 
-**Don't see your distro listed?** Rep your favorite distro by creating a package for it! For info, please see [Recommended Installation Specification](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Recommended-Installation-Specification).
+**Don't see your distro listed?** Rep your favorite distro by creating a package for it! For more info, please see [Recommended Installation Specification](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Recommended-Installation-Specification).
 
 ## Usage
-To get started with using *Lucas' Simpsons Hit & Run Mod Launcher Linux Launcher*, here are some things should do:
-- Configure a game [working directory](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories).
-- Start the *Lucas' Simpsons Hit & Run Mod Launcher* launcher to enter first time initialization. There will be several .NET installers, go through them and install all of the runtimes.
-- If you have saved games or mods you would like to import, move them to the *Lucas' Simpsons Hit & Run Mod Launcher* launcher working directory, `/.local/share/lucas-simpsons-hit-and-run-mod-launcher`. Afterwards, run `check-for-duplicate-lmlms` to remove duplicate default mods leftover from the source mod folder.
+To get started with using *Lucas' Simpsons Hit & Run Mod Launcher Linux Launcher*:
+- Click on the *Lucas' Simpsons Hit & Run Mod Launcher* application from your desktop's application launcher, or run `lucas-simpsons-hit-and-run-mod-launcher`.
+- Allow the script to setup the launcher.
+- Setup your `Simpsons.exe` path in the launcher UI.
+
+This should be all that is required to get up and running. To import your mods, you can move them to `~/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Mods/`, and run `check-for-duplicate-lmlms` in there to remove any mods that are already installed as a part of the mod launcher package.
 
 ## Features
-This section is meant as an informal introduction to what this Linux launcher offers. Complete technical documentation is available on the [wiki](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Home).
+This section is an informal introduction to what this Linux launcher offers. Complete technical documentation is available on the [wiki](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Home).
 
 ### Launcher Scripts
 Included are two [Bash](https://www.gnu.org/software/bash/) launcher scripts , one for *Lucas' Simpsons Hit & Run Mod Launcher* and one for *The Simpsons: Hit & Run* itself, the original game. These launchers manage the internals of the mod launcher and game for you, to ensure a smooth experience. They are also designed to do things "the linux way". The mod launcher in particular constructs a directory layout, using symlinks to redirect the traditional Windows `C:\Users\<USER>\Documents\My Games...` path to the `.local` directory in your home directory. Furthermore, the mod launcher accepts hacks and mods as parameters for convinience.
