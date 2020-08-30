@@ -19,63 +19,6 @@ For more info, see the wiki:
 https://gitlab.com/CodingKoopa/lml-linux-launcher/wikis/Mod-Launcher-Launcher"
 }
 
-launch_mod_launcher() {
-  # Technically, wineboot is executed both on a normal run and during the first time initialization,
-  # but this one doesn't really warrant its own Zenity progress bar because Wine booting after the
-  # prefix has been created is unsignifigant enough to not really matter, it's pretty quick.
-  wineboot &>"$wineboot_log_file"
-
-  # Enable font smoothing. Running this every launch is suboptimal, but necessary because winecfg
-  # may reset the setting.
-  winetricks fontsmooth=rgb &>"$log_dir/winetricks-fontsmooth.log"
-
-  # This regex matches the section of the Wine "reg" registry file where the mod launcher stores the
-  # game EXE path.
-
-  # Whenever it's necessary to input a registry path, eight backslashes are needed, \\\\\\\\. Here's
-  # how it's processed:
-  # - When interpreting this script, Bash escapes each couple of backslashes, becoming \\\\.
-  # - When interpreting the temprary input "reg" file, regedit interprets \x, where x is a
-  # character, as an escape sequence. Therefore, regedit also escapes each couple of backslashes,
-  # becoming \\. I'm not entirely sure why, in the registry, it is stored like this.
-
-  # TODO: Grep's "-z" option separates each line by a null character. This is necessary here to make
-  # a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a NUL. To
-  # get around this, "." is currently used to match the null character, but it might be better to
-  # convert the pattern to that of Perl's and properly match it.
-  if [[ $always_set_registry_key = true ]] ||
-    grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10} \
-[0-9]{7}.#time=([0-9]|[a-z]){15}.\
-\"Game EXE Path\"=\".+\".\
-\"Game Path\"=\".+\"" "$WINEPREFIX/user.reg"; then
-
-    if GAME_WORKING_DIRECTORY=$(the-simpsons-hit-and-run -p); then
-      zenity --width 500 --timeout 5 --info --text "Located a game working directory at \"\
-$GAME_WORKING_DIRECTORY\". Configuring the mod launcher to use it."
-      cat <<EOF >"$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg"
-REGEDIT4
-
-[HKEY_CURRENT_USER\\Software\\Lucas Stuff\\Lucas' Simpsons Hit & Run Tools]
-"Game EXE Path"="$(winepath -w "$GAME_WORKING_DIRECTORY/Simpsons.exe" | sed -E "s/\\\/\\\\\\\\/g")"
-"Game Path"="$(winepath -w "$GAME_WORKING_DIRECTORY" | sed -E "s/\\\/\\\\\\\\/g")"
-EOF
-      wine regedit "$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg"
-    else
-      zenity --width 500 --error --text "Failed to locate a game working directory. To learn how \
-to set one up, see the wiki: \
-https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories
-Although you can manually select your game executable from the mod launcher interface, it is \
-recommended to setup a working directory."
-    fi
-  fi
-
-  # Launch the mod launcher in the background, using taskset to avoid a multicore issue.
-  # We don't have to pass a hacks directory because, the way the structure works out, the launcher
-  # can already see them anyways.
-  taskset -c 0 wine "$MOD_LAUNCHER_EXECUTABLE" -mods "Z:/usr/share/$PACKAGE_NAME/mods/" \
-    "$@" &>"$launcher_log_file" &
-}
-
 function lml_linux_launcher() {
   local force_init=false
   local force_delete_prefix=false
@@ -149,6 +92,8 @@ may not be correctly installed."
   export WINEARCH='win32'
   # Path to the Wine prefix, in the user data directory.
   export WINEPREFIX="$HOME/.local/share/wineprefixes/$PACKAGE_NAME"
+
+  # First, initialize the Wine prefix if we have to.
 
   # If the user forced initialization via the "-i" argument, or there's no existing user data
   # directory.
