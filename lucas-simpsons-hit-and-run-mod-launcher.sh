@@ -128,10 +128,6 @@ function lml_linux_launcher() {
     fi
   done
 
-  ####################################################################################################
-  ### Common variables.
-  ####################################################################################################
-
   # Suggested package name, reused for most of this launcher's support files.
   local -r PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
 
@@ -171,10 +167,6 @@ installed."
   export WINEARCH='win32'
   # Path to the Wine prefix, in the user data directory.
   export WINEPREFIX="$HOME/.local/share/wineprefixes/$PACKAGE_NAME"
-
-  ####################################################################################################
-  ### Initialization and execution.
-  ####################################################################################################
 
   # If the user forced initialization via the "-i" argument, or there's no existing user data
   # directory.
