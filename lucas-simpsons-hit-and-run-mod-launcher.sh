@@ -118,7 +118,7 @@ $dotnet35_log\" to track internal status. If the installation hangs on \
 \"Running /usr/bin/wineserver -w.\", run \"WINEPREFIX=$WINEPREFIX wine taskmgr\", and manually \
 close each process. If an unidentified program encounters a fatal error, it's fine to continue the \
 installation."
-        if ! winetricks dotnet35 &>"$dotnet35_log"; then
+        if ! winetricks -q dotnet35 &>"$dotnet35_log"; then
           zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the Microsoft \
 .NET 3.5 runtime. See \"$dotnet35_log\" for more info."
           echo "# An error occured while initializing Lucas' Simpsons Hit & Run Mod Launcher. To \
