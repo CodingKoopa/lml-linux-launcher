@@ -185,12 +185,8 @@ reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
       echo EOF
     ) |
       zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --pulsate
-  else
-    # It's possible the logs have been cleared.
-    mkdir -p "$log_dir"
-
-    launch_mod_launcher "${mod_launcher_arguments[@]}"
   fi
+  launch_mod_launcher "${mod_launcher_arguments[@]}"
 }
 
 lml_linux_launcher "$@"
