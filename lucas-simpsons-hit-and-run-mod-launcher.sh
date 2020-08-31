@@ -2,8 +2,15 @@
 
 PROGRAM_NAME=${0##*/}
 
-# See: https://stackoverflow.com/a/4025065.
-version_compare() {
+# Compares two semantic version strings. See: https://stackoverflow.com/a/4025065.
+# Arguments:
+#   - The first version.
+#   - The second version.
+# Returns:
+#   - 0 if ver1 == ver2.
+#   - 1 if ver1 > ver2.
+#   - 2 if ver1 < ver2.
+function version_compare() {
   if [[ $1 == "$2" ]]; then
     return 0
   fi
@@ -11,13 +18,13 @@ version_compare() {
   local IFS=.
   read -r -a ver1 <<<"$1"
   read -r -a ver2 <<<"$2"
-  # fill empty fields in ver1 with zeros
+  # Fill empty fields in ver1 with zeros.
   for ((i = ${#ver1[@]}; i < ${#ver2[@]}; i++)); do
     ver1[i]=0
   done
   for ((i = 0; i < ${#ver1[@]}; i++)); do
     if [[ -z ${ver2[i]} ]]; then
-      # fill empty fields in ver2 with zeros
+      # Fill empty fields in ver2 with zeros.
       ver2[i]=0
     fi
     if ((10#${ver1[i]} > 10#${ver2[i]})); then
@@ -30,7 +37,18 @@ version_compare() {
   return 0
 }
 
-version_compare_operator() {
+# Convenience function for using version_compare().
+# Arguments:
+#   - The first version.
+#   - The operator, one of "=", ">", or "<".
+#   - The second version.
+# Outputs:
+#   - An error if an invalid operator was given.
+# Returns:
+#   - 0 if the expression given is true.
+#   - 1 if the expression given is false.
+#   - 2 if the expression given is invalid.
+function version_compare_operator() {
   version_compare "$1" "$3"
   case $? in
   0) op='=' ;;
@@ -48,7 +66,64 @@ version_compare_operator() {
   fi
 }
 
-print_help() {
+# Increments a Zenity progress bar.
+# Variables Read:
+#   - NUM_STEPS: The total number of steps.
+# Variables Written:
+#   - step: The current step.
+# Arguments:
+#   - (Optional) Number of steps to advance by. Defaults to 1.
+# Outputs:
+#   - The percentage.
+function increment_progress() {
+  inc=${1:-1}
+  ((step += inc))
+  # If the multiplication by 100 is done first, then the decimal number will be truncated to 0.
+  echo $((step * 100 / NUM_STEPS))
+}
+
+# Echos output originally intended for Zenity. This function filters out percentages from
+# increment_progress(), as well as the "# " prefix. This function also handles errors that arrise
+# during the execution of the subshell, or from the cancel button being clicked.
+# Outputs:
+#   - Filtered /dev/stdin contents.
+# Returns:
+#   - 0 if successful.
+#   - 1 if an error occurred during the execution of the subshell.
+#   - 2 if EOF was never reached. This generally indicates that the process was cancelled.
+function zenity_echo() {
+  local ret=0
+  local eof_reached=false
+  while read -r line; do
+    # Remove the "# " used by Zenity to mark text to display.
+    line=${line#"# "}
+    # Ignore display number percentages used by Zenity.
+    if [[ $line =~ ^[0-9]+$ ]]; then
+      continue
+    fi
+    # Break on the first EOF received.
+    if [[ $line = *EOF* ]]; then
+      eof_reached=true
+      break
+    fi
+    # Identify any error messages, as the return codes from the subshell are otherwise lost.
+    if [[ ${line,,} = *error* ]]; then
+      ret=1
+    fi
+    echo "$line"
+  done </dev/stdin
+  # If EOF was never reached, then the cancel button was probably clicked. In that case, make
+  # sure this isn't considered a success.
+  if [[ $eof_reached = false ]]; then
+    ret=2
+  fi
+  return $ret
+}
+
+# Prints the help message for this script.
+# Outputs:
+#   - The help message.
+function print_help() {
   echo "Usage: $PROGRAM_NAME [-hidr] [MOD/HACK...]
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
@@ -70,6 +145,15 @@ Simpsons.exe automatically.
 For more info, see the wiki: https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/"
 }
 
+# Launches Lucas' Simpsons Hit and Run Mod Launcher. See the readme, wiki, and above help message
+# for more information.
+# Arguments: See help message.
+# Outputs:
+#   - Prefix initialization progress.
+#   - (Optional) Wine and Winetricks output.
+# Variables Written:
+#   - WINEARCH: See Wine documentation.
+#   - WINEPREFIX: See Wine documentation.
 function lml_linux_launcher() {
   echo "Lucas' Simpsons Hit and Run Mod Launcher Linux Launcher version v0.1.1 starting."
 
@@ -124,41 +208,6 @@ Exiting."
 
   local -r NUM_STEPS=8
   local step=0
-  function increment_progress() {
-    inc=${1:-1}
-    ((step += inc))
-    # If the multiplication by 100 is done first, then the decimal number will be truncated to 0.
-    echo $((step * 100 / NUM_STEPS))
-  }
-
-  function zenity_echo() {
-    local ret=0
-    local eof_reached=false
-    while read -r line; do
-      # Remove the "# " used by Zenity to mark text to display.
-      line=${line#"# "}
-      # Ignore display number percentages used by Zenity.
-      if [[ $line =~ ^[0-9]+$ ]]; then
-        continue
-      fi
-      # Break on the first EOF received.
-      if [[ $line = *EOF* ]]; then
-        eof_reached=true
-        break
-      fi
-      # Identify any error messages, as the return codes from the subshell are otherwise lost.
-      if [[ ${line,,} = *error* ]]; then
-        ret=1
-      fi
-      echo "$line"
-    done </dev/stdin
-    # If EOF was never reached, then the cancel button was probably clicked. In that case, make
-    # sure this isn't considered a success.
-    if [[ $eof_reached = false ]]; then
-      ret=2
-    fi
-    return $ret
-  }
 
   # This subshell is where all of the work with preparing the Wine prefix and launching the launcher
   # is done. It is piped to Zenity to provide a progress bar throughout the process, as well as
