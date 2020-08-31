@@ -106,15 +106,18 @@ may not be correctly installed."
     if ! (
       echo "# Booting up Wine."
       wineboot &>"$wineboot_log"
+      echo 25
 
       echo "# Smoothening fonts."
       # Enable font smoothing. Running this every launch is suboptimal, but necessary because winecfg
       # may reset the setting.
       winetricks fontsmooth=rgb &>"$log_dir/winetricks-fontsmooth.log"
+      echo 50
 
       echo "# Looking for .NET runtime."
       if [[ $force_microsoft_net != true ]] && wine uninstaller --list | grep -q "Wine Mono"; then
         echo "# Using Mono .NET runtime."
+        echo 75
         # No further action necessary. How nice ;)
       else
         # If Microsoft .NET is being forced, there's no need to warn against it.
@@ -132,6 +135,7 @@ implementation? This may provide less consistent results."; then
 
         if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
           echo "# Using Microsoft .NET 3.5 runtime. This will take a while."
+          echo 75
         else
           echo "# Installing the Microsoft .NET 3.5 runtime."
           if ! winetricks -q dotnet35 &>"$dotnet35_log"; then
@@ -139,18 +143,21 @@ implementation? This may provide less consistent results."; then
 .NET 3.5 runtime. See \"${dotnet35_log/&/&amp;}\" for more info."
             echo "# An error occured while initializing the Wine prefix."
             return 1
+            echo 75
           fi
         fi
       fi
       echo "# Finished."
+      echo 100
 
       echo EOF
     ) |
       # This only accounts for the "Cancel" button being clicked. The subshell returning 1 is not
       # considered an error here, so in the rest of the code, we must check for the runtimes to see
       # whether they are present.
-      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --auto-close --pulsate; then
-      return 1
+      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --auto-close; then
+      echo "Cancel button was clicked, exiting."
+      return 0
     fi
   fi
 
