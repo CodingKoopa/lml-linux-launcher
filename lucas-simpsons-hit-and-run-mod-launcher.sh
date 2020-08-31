@@ -131,7 +131,7 @@ implementation? This may provide less consistent results."; then
         local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
 
         if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
-          echo "# Using Microsoft .NET 3.5 runtime."
+          echo "# Using Microsoft .NET 3.5 runtime. This will take a while."
         else
           echo "# Installing the Microsoft .NET 3.5 runtime."
           if ! winetricks -q dotnet35 &>"$dotnet35_log"; then
