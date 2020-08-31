@@ -225,10 +225,10 @@ implementation? This may provide less consistent results."; then
         local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
 
         if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
-          echo "# Using Microsoft .NET 3.5 runtime. This will take a while."
+          echo "# Using Microsoft .NET 3.5 runtime."
           echo 75
         else
-          echo "# Installing the Microsoft .NET 3.5 runtime."
+          echo "# Installing the Microsoft .NET 3.5 runtime. This will take a while"
           if ! winetricks -q $winetricks_verb &>"$dotnet35_log"; then
             zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the Microsoft \
 .NET 3.5 runtime. See \"${dotnet35_log/&/&amp;}\" for more info."
