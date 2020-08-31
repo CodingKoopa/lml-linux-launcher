@@ -96,7 +96,7 @@ may not be correctly installed."
 
     echo "Initializing Wine prefix."
     # Prefix initialization subshell, with progress tracked by Zenity's progress bar.
-    (
+    if ! (
       echo "# Booting up Wine."
       wineboot &>"$wineboot_log"
 
@@ -122,7 +122,12 @@ reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
 
       echo EOF
     ) |
-      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --pulsate
+      # This only accounts for the "Cancel" button being clicked. The subshell returning 1 is not
+      # considered an error here, so in the rest of the code, we must check for the runtimes to see
+      # whether they are present.
+      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --auto-close --pulsate; then
+      return 1
+    fi
   fi
 
   # Then, do some house keeping with the Wine prefix.
