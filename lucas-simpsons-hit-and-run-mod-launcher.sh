@@ -62,6 +62,7 @@ function lml_linux_launcher() {
   # Path to directory within the user data directory for storing logs. This is something specific to
   # this Linux launcher, and is not a part of the original mod launcher.
   local -r log_dir="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Logs"
+  mkdir -p "$log_dir"
   # Path to the log file for when Wine is booting up.
   local -r wineboot_log="$log_dir/wine-wineboot.log"
   # Path to the log file for the mod launcher.
