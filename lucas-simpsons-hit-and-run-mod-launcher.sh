@@ -178,7 +178,7 @@ REGEDIT4
 EOF
       wine regedit "$reg"
     else
-      zenity --width 500 --error --text "Failed to find SHAR directory to use. To learn how to set \
+      zenity --width 500 --warning --text "Failed to find SHAR directory to use. To learn how to set \
 to set this up, see the wiki: \
 https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories. You \
 may manually set the game path in the mod launcher interface."
