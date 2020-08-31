@@ -9,14 +9,15 @@ Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
   -h    Show this help message and exit.
   -i    Force the initialization of the Wine prefix.
   -d    If initializing, force the deletion of the existing prefix, if present.
+  -m    If iniitalizing, force the usage of Microsoft .NET even if Wine Mono is available.
   -r    Force the setting of the mod launcher game executable path registry key.
 
 When ran, this script will check to see if the Wine prefix ~/.local/share/lucas-simpsons-hit-and-run
--mod-launcher exists. If it doesn't exist, it will be created using wineboot. Then, Microsoft's
-implementation of the .NET 3.5 runtime will be installed to it. If it does exist, or if it has just
-been installed, the mod launcher will be launched.
+-mod-launcher exists. If it doesn't exist, it will be created using wineboot. Then, either Wine Mono
+or Microsoft's implementation of the .NET 3.5 runtime will be installed to it. After this setup,
+the mod launcher will be launched.
 
-When launching the game, if ~/.local/share/the-simpsons-hit-and-run or
+When launching the program, if ~/.local/share/the-simpsons-hit-and-run or
 /usr/share/the-simpsons-hit-and-run exist (in that order), they will be used to set the path to
 Simpsons.exe automatically.
 
@@ -29,8 +30,9 @@ function lml_linux_launcher() {
   local force_init=false
   local force_delete_prefix=false
   local always_set_registry_key=false
+  local force_microsoft_net=false
 
-  while getopts "idr" opt; do
+  while getopts "idrm" opt; do
     case $opt in
     i)
       force_init=true
@@ -43,6 +45,9 @@ function lml_linux_launcher() {
       ;;
     r)
       always_set_registry_key=true
+      ;;
+    m)
+      force_microsoft_net=true
       ;;
     *)
       print_help
@@ -106,23 +111,35 @@ may not be correctly installed."
       # Enable font smoothing. Running this every launch is suboptimal, but necessary because winecfg
       # may reset the setting.
       winetricks fontsmooth=rgb &>"$log_dir/winetricks-fontsmooth.log"
-      # Path to the log file for when Winetricks is installing the MS .NET 3.5 runtime.
-      local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
 
-      if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
-        echo "# Microsoft .NET 3.5 is already installed, skipping.."
+      echo "# Looking for .NET runtime."
+      if [[ $force_microsoft_net != true ]] && wine uninstaller --list | grep -q "Wine Mono"; then
+        echo "# Using Mono .NET runtime."
+        # No further action necessary. How nice ;)
       else
-        echo "# Installing the Microsoft .NET 3.5 runtime. This may take a while, use \"tail -f \
-$dotnet35_log\" to track internal status. If the installation hangs on \
-\"Running /usr/bin/wineserver -w.\", run \"WINEPREFIX=$WINEPREFIX wine taskmgr\", and manually \
-close each process. If an unidentified program encounters a fatal error, it's fine to continue the \
-installation."
-        if ! winetricks -q dotnet35 &>"$dotnet35_log"; then
-          zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the Microsoft \
-.NET 3.5 runtime. See \"$dotnet35_log\" for more info."
-          echo "# An error occured while initializing Lucas' Simpsons Hit & Run Mod Launcher. To \
-reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
-          return 1
+        # If Microsoft .NET is being forced, there's no need to warn against it.
+        if [[ $force_microsoft_net = false ]]; then
+          if ! zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Lucas' Simpsons Hit &amp; \
+Run Mod Launcher needs a .NET runtime to run, either Wine Mono or Microsoft's .NET implementation. \
+Wine Mono was not found in the mod launcher Wine prefix, would you like to use Microsoft's \
+implementation? This may provide less consistent results."; then
+            return 1
+          fi
+        fi
+
+        # Path to the log file for when Winetricks is installing the MS .NET 3.5 runtime.
+        local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
+
+        if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
+          echo "# Using Microsoft .NET 3.5 runtime."
+        else
+          echo "# Installing the Microsoft .NET 3.5 runtime."
+          if ! winetricks -q dotnet35 &>"$dotnet35_log"; then
+            zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the Microsoft \
+.NET 3.5 runtime. See \"${dotnet35_log/&/&amp;}\" for more info."
+            echo "# An error occured while initializing the Wine prefix."
+            return 1
+          fi
         fi
       fi
       echo "# Finished."
