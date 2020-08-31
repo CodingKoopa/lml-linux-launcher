@@ -36,6 +36,10 @@ version_compare_operator() {
   0) op='=' ;;
   1) op='>' ;;
   2) op='<' ;;
+  *)
+    echo "Error: invalid operator \"$op\"."
+    return 2
+    ;;
   esac
   if [[ $op = "$2" ]]; then
     return 0
