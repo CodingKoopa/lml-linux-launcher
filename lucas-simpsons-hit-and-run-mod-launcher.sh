@@ -88,13 +88,13 @@ may not be correctly installed."
   # If the user forced initialization via the "-i" argument, or there's no existing user data
   # directory.
   if [[ "$force_init" = true || ! -d "$WINEPREFIX" ]]; then
-    mkdir -p "$log_dir"
-
     # Remove the Wine prefix, if specfied.
     if [[ "$force_delete_prefix" = true ]]; then
+      echo "Deleting Wine prefix."
       rm -rf "$WINEPREFIX"
     fi
 
+    echo "Initializing Wine prefix."
     # Prefix initialization subshell, with progress tracked by Zenity's progress bar.
     (
       echo "# Booting up Wine."
@@ -127,11 +127,7 @@ reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
 
   # Then, do some house keeping with the Wine prefix.
 
-  # Technically, wineboot is executed both on a normal run and during the prefix initialization,
-  # but this one doesn't really warrant its own Zenity progress bar because Wine booting after the
-  # prefix has been created is unsignificant enough to not really matter.
-  wineboot &>"$wineboot_log"
-
+  echo "Running winetricks fontsmooth."
   # Enable font smoothing. Running this every launch is suboptimal, but necessary because winecfg
   # may reset the setting.
   winetricks fontsmooth=rgb &>"$log_dir/winetricks-fontsmooth.log"
@@ -185,6 +181,8 @@ may manually set the game path in the mod launcher interface."
   fi
 
   # Finally, launch Wine with the mod launcher executable.
+
+  echo "Launching launcher."
 
   # Generate arguments for the mod launcher from the arguments passed to the end of this script.
   local -a mod_launcher_arguments
