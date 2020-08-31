@@ -122,7 +122,7 @@ Exiting."
     --width 500
   )
 
-  local -r NUM_STEPS=7
+  local -r NUM_STEPS=8
   local step=0
   function increment_progress() {
     inc=${1:-1}
@@ -195,6 +195,8 @@ may not be correctly installed."
     export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
 
     echo "Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX"
+
+    increment_progress
 
     # First, detect the version of the exe to see if we need any workarounds.
 
