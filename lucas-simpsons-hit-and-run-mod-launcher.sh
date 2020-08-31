@@ -34,6 +34,9 @@ function lml_linux_launcher() {
       force_init=true
       ;;
     d)
+      if [[ $force_init != true ]]; then
+        echo "Warning: \"-d\" doesn't do anything without \"-i\"."
+      fi
       force_delete_prefix=true
       ;;
     r)
