@@ -79,9 +79,9 @@ may not be correctly installed."
   fi
 
   # Architecture for Wine to use. The mod launcher only works on 32-bit.
-  export WINEARCH='win32'
+  export WINEARCH=win32
   # Path to the Wine prefix, in the user data directory.
-  export WINEPREFIX="$HOME/.wine"
+  export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
 
   # First, initialize the Wine prefix if we have to.
 
