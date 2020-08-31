@@ -100,6 +100,10 @@ may not be correctly installed."
       echo "# Booting up Wine."
       wineboot &>"$wineboot_log"
 
+      echo "# Smoothening fonts."
+      # Enable font smoothing. Running this every launch is suboptimal, but necessary because winecfg
+      # may reset the setting.
+      winetricks fontsmooth=rgb &>"$log_dir/winetricks-fontsmooth.log"
       # Path to the log file for when Winetricks is installing the MS .NET 3.5 runtime.
       local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
 
@@ -132,11 +136,17 @@ reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
 
   # Then, do some house keeping with the Wine prefix.
 
-  echo "Running winetricks fontsmooth."
-  # Enable font smoothing. Running this every launch is suboptimal, but necessary because winecfg
-  # may reset the setting.
-  winetricks fontsmooth=rgb &>"$log_dir/winetricks-fontsmooth.log"
+  echo "Checking .NET runtime."
+  if ! wine uninstaller --list | grep -q "Wine Mono" &&
+    ! [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
+    local -r no_runtime_text="No .NET runtime installation found. You can try to fix this by \
+reinitializing with \"$PROGRAM_NAME -i\"."
+    echo "Error: $no_runtime_text"
+    zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$no_runtime_text"
+    return 1
+  fi
 
+  echo "Checking registry."
   # This regex matches the section of the Wine "reg" registry file where the mod launcher stores the
   # game EXE path.
 
