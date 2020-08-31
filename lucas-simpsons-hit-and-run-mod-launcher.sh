@@ -111,132 +111,153 @@ Exiting."
   # Shift the options over to the mod list.
   shift "$((OPTIND - 1))"
 
+  # Set up some utilities for using Zenity.
+
   local -ra ZENITY_COMMON_ARGUMENTS=(
     --title "Lucas' Simpsons Hit & Run Mod Launcher"
     --width 500
   )
 
-  # Suggested package name, reused for most of this launcher's support files.
-  local -r PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
+  local -r NUM_STEPS=7
+  local step=0
+  function increment_progress() {
+    inc=${1:-1}
+    ((step += inc))
+    # If the multiplication by 100 is done first, then the decimal number will be truncated to 0.
+    echo $((step * 100 / NUM_STEPS))
+  }
 
-  # Path to directory within the user data directory for storing logs. This is something specific to
-  # this Linux launcher, and is not a part of the original mod launcher.
-  local -r log_dir="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Logs"
-  mkdir -p "$log_dir"
-  # Path to the log file for when Wine is booting up.
-  local -r wineboot_log="$log_dir/wine-wineboot.log"
-  # Path to the log file for the mod launcher.
-  local -r launcher_log="$log_dir/wine-$PACKAGE_NAME.log"
+  function zenity_echo() {
+    local ret=0
+    local eof_reached=false
+    while read -r line; do
+      # Remove the "# " used by Zenity to mark text to display.
+      line=${line#"# "}
+      # Ignore display number percentages used by Zenity.
+      if [[ $line =~ ^[0-9]+$ ]]; then
+        continue
+      fi
+      # Break on the first EOF received.
+      if [[ $line = *EOF* ]]; then
+        eof_reached=true
+        break
+      fi
+      # Identify any error messages, as the return codes from the subshell are otherwise lost.
+      if [[ ${line,,} = *error* ]]; then
+        ret=1
+      fi
+      echo "$line"
+    done </dev/stdin
+    # If EOF was never reached, then the cancel button was probably clicked. In that case, make
+    # sure this isn't considered a success.
+    if [[ $eof_reached = false ]]; then
+      ret=2
+    fi
+    return $ret
+  }
 
-  # Path to mod launcher executable in the system library folder.
-  local -r MOD_LAUNCHER_EXECUTABLE="/usr/lib/$PACKAGE_NAME/$PACKAGE_NAME.exe"
+  # This subshell is where all of the work with preparing the Wine prefix and launching the launcher
+  # is done. It is piped to Zenity to provide a progress bar throughout the process, as well as
+  # zenity_echo, to continue providing messages to the terminal.
+  (
+    # Messages beginning with "# " are displayed in Zenity, as well as the terminal.
+    echo "# Initializing."
 
-  if [[ ! -f "$MOD_LAUNCHER_EXECUTABLE" ]]; then
-    zenity --title "Lucas' Simpsons Hit & Run Mod Launcher" --width 500 --error --text "Lucas' \
+    # Suggested package name, reused for most of this launcher's support files.
+    local -r PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
+
+    # Path to directory within the user data directory for storing logs. This is something specific to
+    # this Linux launcher, and is not a part of the original mod launcher.
+    local -r log_dir="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Logs"
+    mkdir -p "$log_dir"
+    # Path to the log file for when Wine is booting up.
+    local -r wineboot_log="$log_dir/wine-wineboot.log"
+    # Path to the log file for the mod launcher.
+    local -r launcher_log="$log_dir/wine-$PACKAGE_NAME.log"
+
+    # Path to mod launcher executable in the system library folder.
+    local -r MOD_LAUNCHER_EXECUTABLE="/usr/lib/$PACKAGE_NAME/$PACKAGE_NAME.exe"
+
+    if [[ ! -f "$MOD_LAUNCHER_EXECUTABLE" ]]; then
+      zenity --title "Lucas' Simpsons Hit & Run Mod Launcher" --width 500 --error --text "Lucas' \
 Simpsons Hit &amp; Run Mod Launcher executable not found at $MOD_LAUNCHER_EXECUTABLE. The package \
 may not be correctly installed."
-    return 1
-  fi
-
-  # Architecture for Wine to use. The mod launcher only works on 32-bit.
-  export WINEARCH=win32
-  # Path to the Wine prefix, in the user data directory.
-  export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
-
-  echo "Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX"
-
-  # First, detect the version of the exe to see if we need any workarounds.
-
-  # Unlike $force_microsoft_net, this variable takes effect when launching, not just when
-  # initializing.
-  local need_msdotnet=false
-  local noupdatejumplist=false
-  local winetricks_verb="dotnet35"
-  if [[ $detect_version = true ]]; then
-    # See: https://askubuntu.com/a/239722.
-    local -r mod_launcher_version=$(wrestool --extract --raw --type=version \
-      "$MOD_LAUNCHER_EXECUTABLE" |
-      tr '\0, ' '\t.\0' |
-      sed 's/\t\t/_/g' |
-      tr -c -d '[:print:]' |
-      sed -r -n 's/.*Version[^0-9]*([0-9]+\.[0-9]+(\.[0-9][0-9]?)?).*/\1/p')
-    # Until version 1.25, Mono does not work with the mod launcher.
-    if version_compare_operator "$mod_launcher_version" "<" "1.25"; then
-      echo "Mod launcher version is <1.25, disabling Mono support."
-      need_msdotnet=true
-      force_microsoft_net=true
-    fi
-    # Version 1.22 introduced jump lists, which throw an exception when used in Wine. 1.25 disables
-    # this automatically when running in Wine.
-    if version_compare_operator "$mod_launcher_version" ">" "1.21" &&
-      version_compare_operator "$mod_launcher_version" "<" "1.25"; then
-      echo "Mod launcher version is >=1.22 and <1.25, disabling jump list."
-      noupdatejumplist=true
-    fi
-    # Version 1.13 introduced a requirement for Service Pack 1, which was removed in 1.22.4.
-    if version_compare_operator "$mod_launcher_version" ">" "1.12.1" &&
-      version_compare_operator "$mod_launcher_version" "<" "1.22.4"; then
-      echo "Mod launcher version is >=1.13 and <1.22.4, requiring .NET 3.5 Service Pack 1."
-      winetricks_verb=${winetricks_verb}sp1
-    fi
-  fi
-
-  # Then, initialize the Wine prefix if we have to.
-
-  # If the user forced initialization via the "-i" argument, or there's no existing user data
-  # directory.
-  if [[ "$force_init" = true || ! -d "$WINEPREFIX" ]]; then
-    # Remove the Wine prefix, if specfied.
-    if [[ "$force_delete_prefix" = true ]]; then
-      echo "Deleting Wine prefix."
-      rm -rf "$WINEPREFIX"
+      return 1
     fi
 
-    echo "Initializing Wine prefix."
-    function zenity_echo() {
-      local ret=0
-      local eof_reached=false
-      while read -r line; do
-        # Remove the "# " used by Zenity to mark text to display.
-        line=${line#"# "}
-        # Ignore display number percentages used by Zenity.
-        if [[ $line =~ ^[0-9]+$ ]]; then
-          continue
-        fi
-        # Break on the first EOF received.
-        if [[ $line = *EOF* ]]; then
-          eof_reached=true
-          break
-        fi
-        # Identify any error messages, as the return codes from the subshell are otherwise lost.
-        if [[ ${line,,} = *error* ]]; then
-          ret=1
-        fi
-        echo "$line"
-      done </dev/stdin
-      # If EOF was never reached, then the cancel button was probably clicked. In that case, make
-      # sure this isn't considered a success.
-      if [[ $eof_reached = false ]]; then
-        ret=2
+    # Architecture for Wine to use. The mod launcher only works on 32-bit.
+    export WINEARCH=win32
+    # Path to the Wine prefix, in the user data directory.
+    export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
+
+    echo "Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX"
+
+    # First, detect the version of the exe to see if we need any workarounds.
+
+    # Unlike $force_microsoft_net, this variable takes effect when launching, not just when
+    # initializing.
+    local need_msdotnet=false
+    local noupdatejumplist=false
+    local winetricks_verb="dotnet35"
+    if [[ $detect_version = true ]]; then
+      # See: https://askubuntu.com/a/239722.
+      local -r mod_launcher_version=$(wrestool --extract --raw --type=version \
+        "$MOD_LAUNCHER_EXECUTABLE" |
+        tr '\0, ' '\t.\0' |
+        sed 's/\t\t/_/g' |
+        tr -c -d '[:print:]' |
+        sed -r -n 's/.*Version[^0-9]*([0-9]+\.[0-9]+(\.[0-9][0-9]?)?).*/\1/p')
+      echo "# Applying workarounds for mod launcher version $mod_launcher_version."
+      # Until version 1.25, Mono does not work with the mod launcher.
+      if version_compare_operator "$mod_launcher_version" "<" "1.25"; then
+        echo "Mod launcher version is <1.25, disabling Mono support."
+        need_msdotnet=true
+        force_microsoft_net=true
       fi
-      return $ret
-    }
-    # Prefix initialization subshell, with progress tracked by Zenity's progress bar.
-    (
+      # Version 1.22 introduced jump lists, which throw an exception when used in Wine. 1.25 disables
+      # this automatically when running in Wine.
+      if version_compare_operator "$mod_launcher_version" ">" "1.21" &&
+        version_compare_operator "$mod_launcher_version" "<" "1.25"; then
+        echo "Mod launcher version is >=1.22 and <1.25, disabling jump list."
+        noupdatejumplist=true
+      fi
+      # Version 1.13 introduced a requirement for Service Pack 1, which was removed in 1.22.4.
+      if version_compare_operator "$mod_launcher_version" ">" "1.12.1" &&
+        version_compare_operator "$mod_launcher_version" "<" "1.22.4"; then
+        echo "Mod launcher version is >=1.13 and <1.22.4, requiring .NET 3.5 Service Pack 1."
+        winetricks_verb=${winetricks_verb}sp1
+      fi
+      increment_progress
+    else
+      echo "# Workaround detection disabled, skipping."
+      increment_progress
+    fi
+
+    # Then, initialize the Wine prefix if we have to.
+
+    # If the user forced initialization via the "-i" argument, or there's no existing user data
+    # directory.
+    if [[ "$force_init" = true || ! -d "$WINEPREFIX" ]]; then
+      # Remove the Wine prefix, if specfied.
+      if [[ "$force_delete_prefix" = true ]]; then
+        echo "Deleting Wine prefix."
+        rm -rf "$WINEPREFIX"
+      fi
+
       echo "# Booting up Wine."
       wineboot &>"$wineboot_log"
-      echo 25
+      increment_progress
 
       echo "# Smoothening fonts."
       # Enable font smoothing. Running this every launch is suboptimal, but necessary because
       # winecfg may reset the setting.
       winetricks fontsmooth=rgb &>"$log_dir/winetricks-fontsmooth.log"
-      echo 50
+      increment_progress
 
       echo "# Looking for .NET runtime."
       if [[ $force_microsoft_net != true ]] && wine uninstaller --list | grep -q "Wine Mono"; then
         echo "# Using Mono .NET runtime."
-        echo 75
+        increment_progress
         # No further action necessary. How nice ;)
       else
         # If Microsoft .NET is being forced, there's no need to warn against it.
@@ -254,120 +275,124 @@ implementation? This may provide less consistent results."; then
 
         if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
           echo "# Using Microsoft .NET 3.5 runtime."
-          echo 75
+          increment_progress
         else
-          echo "# Installing the Microsoft .NET 3.5 runtime. This will take a while"
+          echo "# Installing Microsoft .NET 3.5 runtime. This will take a while."
           if ! winetricks -q $winetricks_verb &>"$dotnet35_log"; then
             zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the Microsoft \
 .NET 3.5 runtime. See \"${dotnet35_log/&/&amp;}\" for more info."
             echo "# An error occured while initializing the Wine prefix."
             return 1
-            echo 75
           fi
+          increment_progress
         fi
       fi
-      echo "# Finished."
-      echo 100
-
-      echo EOF
-    ) | tee >(zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --auto-close) | zenity_echo
-  fi
-
-  # Then, do some house keeping with the Wine prefix.
-
-  echo "Checking .NET runtime."
-  if ! [[ $(winetricks list-installed) == *"$winetricks_verb"* ]]; then
-    if ! wine uninstaller --list | grep -q "Wine Mono"; then
-      local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
-reinitializing with \"$PROGRAM_NAME -i\"."
-      echo "Error: $no_runtime_text"
-      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$no_runtime_text"
-      return 1
-    elif [[ $need_msdotnet = true ]]; then
-      local -r need_msdotnet_text="Microsoft .NET 3.5 runtime installation not found. Wine Mono \
-was found, but is not supported by mod launcher version $mod_launcher_version."
-      echo "Error: $need_msdotnet_text"
-      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$need_msdotnet_text"
-      return 1
+    else
+      # Skip over the Wine prefix initialization steps.
+      increment_progress 3
     fi
-  fi
 
-  echo "Checking registry."
-  # This regex matches the section of the Wine "reg" registry file where the mod launcher stores the
-  # game EXE path.
+    # Then, do some house keeping with the Wine prefix.
 
-  # Whenever it's necessary to input a registry path, eight backslashes are needed, \\\\\\\\. Here's
-  # how it's processed:
-  # - When interpreting this script, Bash escapes each couple of backslashes, becoming \\\\.
-  # - When interpreting the temprary input "reg" file, regedit interprets \x, where x is a
-  # character, as an escape sequence. Therefore, regedit also escapes each couple of backslashes,
-  # becoming \\. I'm not entirely sure why, in the registry, it is stored like this.
+    echo "# Checking .NET runtime."
+    if ! [[ $(winetricks list-installed) == *"$winetricks_verb"* ]]; then
+      if ! wine uninstaller --list | grep -q "Wine Mono"; then
+        local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
+reinitializing with \"$PROGRAM_NAME -i\"."
+        echo "Error: $no_runtime_text"
+        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$no_runtime_text"
+        return 1
+      elif [[ $need_msdotnet = true ]]; then
+        local -r need_msdotnet_text="Microsoft .NET 3.5 runtime installation not found. Wine Mono \
+was found, but is not supported by mod launcher version $mod_launcher_version."
+        echo "Error: $need_msdotnet_text"
+        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$need_msdotnet_text"
+        return 1
+      fi
+    fi
+    increment_progress
 
-  # TODO: Grep's "-z" option separates each line by a null character. This is necessary here to make
-  # a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a NUL. To
-  # get around this, "." is currently used to match the null character, but it might be better to
-  # convert the pattern to that of Perl's and properly match it.
-  if [[ $always_set_registry_key = true ]] ||
-    grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10} \
+    echo "# Checking registry."
+    # This regex matches the section of the Wine "reg" registry file where the mod launcher stores the
+    # game EXE path.
+
+    # Whenever it's necessary to input a registry path, eight backslashes are needed, \\\\\\\\. Here's
+    # how it's processed:
+    # - When interpreting this script, Bash escapes each couple of backslashes, becoming \\\\.
+    # - When interpreting the temprary input "reg" file, regedit interprets \x, where x is a
+    # character, as an escape sequence. Therefore, regedit also escapes each couple of backslashes,
+    # becoming \\. I'm not entirely sure why, in the registry, it is stored like this.
+
+    # TODO: Grep's "-z" option separates each line by a null character. This is necessary here to make
+    # a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a NUL. To
+    # get around this, "." is currently used to match the null character, but it might be better to
+    # convert the pattern to that of Perl's and properly match it.
+    if [[ $always_set_registry_key = true ]] ||
+      grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10} \
 [0-9]{7}.#time=([0-9]|[a-z]){15}.\
 \"Game EXE Path\"=\".+\".\
 \"Game Path\"=\".+\"" "$WINEPREFIX/user.reg"; then
 
-    user_shar_directory=$HOME/.local/share/the-simpsons-hit-and-run
-    system_shar_directory=/usr/share/the-simpsons-hit-and-run
-    if [[ -d $user_shar_directory ]]; then
-      shar_directory=$user_shar_directory
-    elif [[ -d $system_shar_directory ]]; then
-      shar_directory=$system_shar_directory
-    fi
+      user_shar_directory=$HOME/.local/share/the-simpsons-hit-and-run
+      system_shar_directory=/usr/share/the-simpsons-hit-and-run
+      if [[ -d $user_shar_directory ]]; then
+        shar_directory=$user_shar_directory
+      elif [[ -d $system_shar_directory ]]; then
+        shar_directory=$system_shar_directory
+      fi
 
-    if [[ -d $shar_directory ]]; then
-      zenity --width 500 --timeout 5 --info --text "Located a game working directory at \"\
-$shar_directory\". Configuring the mod launcher to use it."
-      reg=$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
-      cat <<EOF >"$reg"
+      if [[ -d $shar_directory ]]; then
+        echo "# Configuring the mod launcher to use SHAR directory \"$shar_directory\"."
+        reg=$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
+        cat <<EOF >"$reg"
 REGEDIT4
 
 [HKEY_CURRENT_USER\\Software\\Lucas Stuff\\Lucas' Simpsons Hit & Run Tools]
 "Game EXE Path"="$(winepath -w "$shar_directory/Simpsons.exe" | sed -E "s/\\\/\\\\\\\\/g")"
 "Game Path"="$(winepath -w "$shar_directory" | sed -E "s/\\\/\\\\\\\\/g")"
 EOF
-      wine regedit "$reg"
-    else
-      zenity --width 500 --warning --text "Failed to find SHAR directory to use. To learn how to \
+        wine regedit "$reg"
+      else
+        zenity --width 500 --warning --text "Failed to find SHAR directory to use. To learn how to \
 set this up, see the wiki: \
 https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories. You \
 may manually set the game path in the mod launcher interface."
+      fi
     fi
-  fi
+    increment_progress
 
-  # Finally, launch Wine with the mod launcher executable.
+    # Finally, launch Wine with the mod launcher executable.
 
-  echo "Launching launcher."
+    echo "# Launching launcher."
 
-  # Generate arguments for the mod launcher from the arguments passed to the end of this script.
-  local -a mod_launcher_arguments
-  if [[ $noupdatejumplist = true ]]; then
-    mod_launcher_arguments+=(-noupdatejumplist)
-  fi
-  for file in "$@"; do
-    local extension=${file##*.}
-    if [[ "$extension" = "lmlm" ]]; then
-      # By defualt, Wine maps the Z drive to "/" on the host filesystem.
-      mod_launcher_arguments+=(-mod Z:"$file")
-    elif [[ "$extension" = "lmlh" ]]; then
-      mod_launcher_arguments+=(-hack Z:"$file")
-    else
-      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "File \"$file\" not recognized as a \
+    # Generate arguments for the mod launcher from the arguments passed to the end of this script.
+    local -a mod_launcher_arguments
+    if [[ $noupdatejumplist = true ]]; then
+      mod_launcher_arguments+=(-noupdatejumplist)
+    fi
+    for file in "$@"; do
+      local extension=${file##*.}
+      if [[ "$extension" = "lmlm" ]]; then
+        # By defualt, Wine maps the Z drive to "/" on the host filesystem.
+        mod_launcher_arguments+=(-mod Z:"$file")
+      elif [[ "$extension" = "lmlh" ]]; then
+        mod_launcher_arguments+=(-hack Z:"$file")
+      else
+        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "File \"$file\" not recognized as a \
 file handled by the mod launcher, ignoring."
-    fi
-  done
+      fi
+    done
 
-  # Launch the mod launcher.
-  # We don't have to pass a hacks directory because, the way the structure works out, the launcher
-  # can already see them anyways.
-  wine "$MOD_LAUNCHER_EXECUTABLE" -mods "Z:/usr/share/$PACKAGE_NAME/mods/" \
-    "${mod_launcher_arguments[@]}" &>"$launcher_log"
+    # This should be 100.
+    increment_progress
+    echo EOF
+
+    # Launch the mod launcher.
+    # We don't have to pass a hacks directory because, the way the structure works out, the launcher
+    # can already see them anyways.
+    wine "$MOD_LAUNCHER_EXECUTABLE" -mods "Z:/usr/share/$PACKAGE_NAME/mods/" \
+      "${mod_launcher_arguments[@]}" &>"$launcher_log"
+  ) | tee >(zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --auto-close) | zenity_echo
 }
 
 lml_linux_launcher "$@"
