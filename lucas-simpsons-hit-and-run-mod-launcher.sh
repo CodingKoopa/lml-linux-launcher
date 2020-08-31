@@ -1,7 +1,9 @@
 #!/bin/bash
 
+PROGRAM_NAME=${0##*/}
+
 print_help() {
-  echo "Usage: ${0##*/} [-hidr] [MOD/HACK...]
+  echo "Usage: $PROGRAM_NAME [-hidr] [MOD/HACK...]
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
   -h    Show this help message and exit.
