@@ -142,7 +142,7 @@ reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
   echo "Checking .NET runtime."
   if ! wine uninstaller --list | grep -q "Wine Mono" &&
     ! [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
-    local -r no_runtime_text="No .NET runtime installation found. You can try to fix this by \
+    local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
 reinitializing with \"$PROGRAM_NAME -i\"."
     echo "Error: $no_runtime_text"
     zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$no_runtime_text"
