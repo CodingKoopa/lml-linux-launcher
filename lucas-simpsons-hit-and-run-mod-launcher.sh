@@ -143,6 +143,8 @@ may not be correctly installed."
   # Path to the Wine prefix, in the user data directory.
   export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
 
+  echo "Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX"
+
   # First, detect the version of the exe to see if we need any workarounds.
 
   # Unlike $force_microsoft_net, this variable takes effect when launching, not just when
