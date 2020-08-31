@@ -123,6 +123,7 @@ reinitialize with a new Wine prefix, run \"$PROGRAM_NAME -i\"."
           return 1
         fi
       fi
+      echo "# Finished."
 
       echo EOF
     ) |
