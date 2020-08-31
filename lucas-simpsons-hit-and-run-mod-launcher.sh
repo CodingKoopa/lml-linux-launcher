@@ -2,6 +2,48 @@
 
 PROGRAM_NAME=${0##*/}
 
+# See: https://stackoverflow.com/a/4025065.
+version_compare() {
+  if [[ $1 == "$2" ]]; then
+    return 0
+  fi
+  local i
+  local IFS=.
+  read -r -a ver1 <<<"$1"
+  read -r -a ver2 <<<"$2"
+  # fill empty fields in ver1 with zeros
+  for ((i = ${#ver1[@]}; i < ${#ver2[@]}; i++)); do
+    ver1[i]=0
+  done
+  for ((i = 0; i < ${#ver1[@]}; i++)); do
+    if [[ -z ${ver2[i]} ]]; then
+      # fill empty fields in ver2 with zeros
+      ver2[i]=0
+    fi
+    if ((10#${ver1[i]} > 10#${ver2[i]})); then
+      return 1
+    fi
+    if ((10#${ver1[i]} < 10#${ver2[i]})); then
+      return 2
+    fi
+  done
+  return 0
+}
+
+version_compare_operator() {
+  version_compare "$1" "$3"
+  case $? in
+  0) op='=' ;;
+  1) op='>' ;;
+  2) op='<' ;;
+  esac
+  if [[ $op = "$2" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 print_help() {
   echo "Usage: $PROGRAM_NAME [-hidr] [MOD/HACK...]
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
@@ -26,6 +68,17 @@ For more info, see the wiki: https://gitlab.com/CodingKoopa/lml-linux-launcher/-
 
 function lml_linux_launcher() {
   echo "Lucas' Simpsons Hit and Run Mod Launcher Linux Launcher version v0.1.1 starting."
+
+  if ! command -v zenity &>/dev/null; then
+    echo "Error: zenity not found. Please install it via your package manager to use this script. \
+Exiting."
+    return 1
+  fi
+  local detect_version=true
+  if ! command -v wrestool &>/dev/null; then
+    echo "wrestool not found, will assume latest mod launcher is being used."
+    detect_version=false
+  fi
 
   local force_init=false
   local force_delete_prefix=false
@@ -90,7 +143,43 @@ may not be correctly installed."
   # Path to the Wine prefix, in the user data directory.
   export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
 
-  # First, initialize the Wine prefix if we have to.
+  # First, detect the version of the exe to see if we need any workarounds.
+
+  # Unlike $force_microsoft_net, this variable takes effect when launching, not just when
+  # initializing.
+  local need_msdotnet=false
+  local noupdatejumplist=false
+  local winetricks_verb="dotnet35"
+  if [[ $detect_version = true ]]; then
+    # See: https://askubuntu.com/a/239722.
+    local -r mod_launcher_version=$(wrestool --extract --raw --type=version \
+      "$MOD_LAUNCHER_EXECUTABLE" |
+      tr '\0, ' '\t.\0' |
+      sed 's/\t\t/_/g' |
+      tr -c -d '[:print:]' |
+      sed -r -n 's/.*Version[^0-9]*([0-9]+\.[0-9]+(\.[0-9][0-9]?)?).*/\1/p')
+    # Until version 1.25, Mono does not work with the mod launcher.
+    if version_compare_operator "$mod_launcher_version" "<" "1.25"; then
+      echo "Mod launcher version is <1.25, disabling Mono support."
+      need_msdotnet=true
+      force_microsoft_net=true
+    fi
+    # Version 1.22 introduced jump lists, which throw an exception when used in Wine. 1.25 disables
+    # this automatically when running in Wine.
+    if version_compare_operator "$mod_launcher_version" ">" "1.21" &&
+      version_compare_operator "$mod_launcher_version" "<" "1.25"; then
+      echo "Mod launcher version is >=1.22 and <1.25, disabling jump list."
+      noupdatejumplist=true
+    fi
+    # Version 1.13 introduced a requirement for Service Pack 1, which was removed in 1.22.4.
+    if version_compare_operator "$mod_launcher_version" ">" "1.12.1" &&
+      version_compare_operator "$mod_launcher_version" "<" "1.22.4"; then
+      echo "Mod launcher version is >=1.13 and <1.22.4, requiring .NET 3.5 Service Pack 1."
+      winetricks_verb=${winetricks_verb}sp1
+    fi
+  fi
+
+  # Then, initialize the Wine prefix if we have to.
 
   # If the user forced initialization via the "-i" argument, or there's no existing user data
   # directory.
@@ -138,7 +227,7 @@ implementation? This may provide less consistent results."; then
           echo 75
         else
           echo "# Installing the Microsoft .NET 3.5 runtime."
-          if ! winetricks -q dotnet35 &>"$dotnet35_log"; then
+          if ! winetricks -q $winetricks_verb &>"$dotnet35_log"; then
             zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the Microsoft \
 .NET 3.5 runtime. See \"${dotnet35_log/&/&amp;}\" for more info."
             echo "# An error occured while initializing the Wine prefix."
@@ -164,13 +253,20 @@ implementation? This may provide less consistent results."; then
   # Then, do some house keeping with the Wine prefix.
 
   echo "Checking .NET runtime."
-  if ! wine uninstaller --list | grep -q "Wine Mono" &&
-    ! [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
-    local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
+  if ! [[ $(winetricks list-installed) == *"$winetricks_verb"* ]]; then
+    if ! wine uninstaller --list | grep -q "Wine Mono"; then
+      local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
 reinitializing with \"$PROGRAM_NAME -i\"."
-    echo "Error: $no_runtime_text"
-    zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$no_runtime_text"
-    return 1
+      echo "Error: $no_runtime_text"
+      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$no_runtime_text"
+      return 1
+    elif [[ $need_msdotnet = true ]]; then
+      local -r need_msdotnet_text="Microsoft .NET 3.5 runtime installation not found. Wine Mono \
+was found, but is not supported by mod launcher version $mod_launcher_version."
+      echo "Error: $need_msdotnet_text"
+      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$need_msdotnet_text"
+      return 1
+    fi
   fi
 
   echo "Checking registry."
@@ -228,6 +324,9 @@ may manually set the game path in the mod launcher interface."
 
   # Generate arguments for the mod launcher from the arguments passed to the end of this script.
   local -a mod_launcher_arguments
+  if [[ $noupdatejumplist = true ]]; then
+    mod_launcher_arguments+=(-noupdatejumplist)
+  fi
   for file in "$@"; do
     local extension=${file##*.}
     if [[ "$extension" = "lmlm" ]]; then
