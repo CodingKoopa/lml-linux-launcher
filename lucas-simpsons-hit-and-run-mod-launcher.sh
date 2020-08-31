@@ -193,8 +193,36 @@ may not be correctly installed."
     fi
 
     echo "Initializing Wine prefix."
+    function zenity_echo() {
+      local ret=0
+      local eof_reached=false
+      while read -r line; do
+        # Remove the "# " used by Zenity to mark text to display.
+        line=${line#"# "}
+        # Ignore display number percentages used by Zenity.
+        if [[ $line =~ ^[0-9]+$ ]]; then
+          continue
+        fi
+        # Break on the first EOF received.
+        if [[ $line = *EOF* ]]; then
+          eof_reached=true
+          break
+        fi
+        # Identify any error messages, as the return codes from the subshell are otherwise lost.
+        if [[ ${line,,} = *error* ]]; then
+          ret=1
+        fi
+        echo "$line"
+      done </dev/stdin
+      # If EOF was never reached, then the cancel button was probably clicked. In that case, make
+      # sure this isn't considered a success.
+      if [[ $eof_reached = false ]]; then
+        ret=2
+      fi
+      return $ret
+    }
     # Prefix initialization subshell, with progress tracked by Zenity's progress bar.
-    if ! (
+    (
       echo "# Booting up Wine."
       wineboot &>"$wineboot_log"
       echo 25
@@ -242,14 +270,7 @@ implementation? This may provide less consistent results."; then
       echo 100
 
       echo EOF
-    ) |
-      # This only accounts for the "Cancel" button being clicked. The subshell returning 1 is not
-      # considered an error here, so in the rest of the code, we must check for the runtimes to see
-      # whether they are present.
-      zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --auto-close; then
-      echo "Cancel button was clicked, exiting."
-      return 0
-    fi
+    ) | tee >(zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --auto-close) | zenity_echo
   fi
 
   # Then, do some house keeping with the Wine prefix.
