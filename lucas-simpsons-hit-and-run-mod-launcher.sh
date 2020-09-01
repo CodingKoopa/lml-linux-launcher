@@ -396,7 +396,7 @@ $MOD_LAUNCHER_EXECUTABLE. The package may not be correctly installed.")"
         mkdir -p "$prefix_lmlll_dir"
       fi
 
-      echo "# Booting up Wine."
+      echo "# Booting up Wine. If prompted about Wine Mono being missing, click \"Install\"."
       run wineboot "$wineboot_log"
       increment_progress
 
