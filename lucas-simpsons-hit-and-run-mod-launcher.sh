@@ -296,7 +296,7 @@ Exiting."
   # is done. It is piped to Zenity to provide a progress bar throughout the process, as well as
   # zenity_echo, to continue providing messages to the terminal.
   (
-    local -r NUM_STEPS=8
+    local -r NUM_STEPS=7
     local step=0
 
     # Messages beginning with "# " are displayed in Zenity, as well as the terminal.
@@ -400,12 +400,6 @@ $MOD_LAUNCHER_EXECUTABLE. The package may not be correctly installed.")"
       run wineboot "$wineboot_log"
       increment_progress
 
-      echo "# Smoothening fonts."
-      # Enable font smoothing. Running this every launch is suboptimal, but necessary because
-      # winecfg may reset the setting.
-      run "winetricks fontsmooth=rgb" "$log_dir/winetricks-fontsmooth.log"
-      increment_progress
-
       echo "# Looking for .NET runtime."
       if [[ $force_microsoft_net != true ]] && wine uninstaller --list | grep -q "Wine Mono"; then
         echo "# Using Mono .NET runtime."
@@ -442,7 +436,7 @@ install the Microsoft .NET 3.5 runtime. See \"${dotnet35_log}\" for more info.")
       assume_working=true
     else
       # Skip over the Wine prefix initialization steps.
-      increment_progress 3
+      increment_progress 2
     fi
 
     # Then, do some house keeping with the Wine prefix.
