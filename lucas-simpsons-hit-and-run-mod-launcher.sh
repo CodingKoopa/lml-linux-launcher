@@ -170,7 +170,7 @@ function zenity_echo() {
   # If EOF was never reached, then the cancel button was probably clicked. In that case, make sure
   # this isn't considered a success.
   if [[ $eof_reached = false ]]; then
-    ret=2
+    error "EOF not reached. Either an error occurred in the subshell, or user cancelled."
   fi
   return $ret
 }
