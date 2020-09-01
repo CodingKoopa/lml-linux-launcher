@@ -281,13 +281,15 @@ Exiting."
     --width 500
   )
 
+  local -a ZENITY_PROGRESS_ARGUMENTS=()
+
   # If we log to stdout, Zenity interprets some of Wine's output as percentages, which ruins the
   # progress bar, as well as --auto-close.
   if [[ $log_to_stdout = true ]]; then
     # Pulsate rather than having a fixed position bar.
-    ZENITY_COMMON_ARGUMENTS+=(--pulsate)
+    ZENITY_PROGRESS_ARGUMENTS+=(--pulsate)
   else
-    ZENITY_COMMON_ARGUMENTS+=(--auto-close)
+    ZENITY_PROGRESS_ARGUMENTS+=(--auto-close)
   fi
 
   # This subshell is where all of the work with preparing the Wine prefix and launching the launcher
@@ -541,7 +543,8 @@ a file handled by the mod launcher, ignoring.")"
       ${mod_launcher_arguments[*]}" "$launcher_log"
 
     echo EOF
-  ) | tee >(zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress) | zenity_echo
+  ) | tee >(zenity "${ZENITY_COMMON_ARGUMENTS[@]}" "${ZENITY_PROGRESS_ARGUMENTS[@]}" --progress) |
+    zenity_echo
 }
 
 lml_linux_launcher "$@"
