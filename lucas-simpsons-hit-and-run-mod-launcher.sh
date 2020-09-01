@@ -118,6 +118,16 @@ function increment_progress() {
   echo $((step * 100 / NUM_STEPS))
 }
 
+# Sanitizes a string so that it may be displayed in Zenity without any problems. sed expression from
+# https://unix.stackexchange.com/a/37663.
+# Arguments:
+#   - The input string.
+# Outputs:
+#   - The sanitized string.
+function sanitize_zenity() {
+  echo "$1" | sed -e 's/\\/\\\\/g' -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
+}
+
 # Echos output originally intended for Zenity. This function filters out percentages from
 # increment_progress(), as well as the "# " prefix. This function also handles errors that arrise
 # during the execution of the subshell, or from the cancel button being clicked. Finally, this
@@ -306,9 +316,9 @@ Exiting."
     local -r MOD_LAUNCHER_EXECUTABLE="/usr/lib/$PACKAGE_NAME/$PACKAGE_NAME.exe"
 
     if [[ ! -f "$MOD_LAUNCHER_EXECUTABLE" ]]; then
-      zenity --title "Lucas' Simpsons Hit & Run Mod Launcher" --width 500 --error --text "Lucas' \
-Simpsons Hit &amp; Run Mod Launcher executable not found at $MOD_LAUNCHER_EXECUTABLE. The package \
-may not be correctly installed."
+      zenity --title "Lucas' Simpsons Hit & Run Mod Launcher" --width 500 --error --text \
+        "$(sanitize_zenity "Lucas' Simpsons Hit & Run Mod Launcher executable not found at \
+$MOD_LAUNCHER_EXECUTABLE. The package may not be correctly installed.")"
       return 1
     fi
 
@@ -392,10 +402,11 @@ may not be correctly installed."
         else
           # If Microsoft .NET is being forced, there's no need to warn against it.
           if [[ $force_microsoft_net = false ]]; then
-            if ! zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Lucas' Simpsons Hit \
-&amp; Run Mod Launcher needs a .NET runtime to run, either Wine Mono or Microsoft's .NET \
-implementation. Wine Mono was not found in the mod launcher Wine prefix, would you like to install \
-Microsoft's implementation? This may provide less consistent results."; then
+            if ! zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "$(sanitize_zenity \
+              "Lucas' Simpsons Hit & Run Mod Launcher needs a .NET runtime to run, either Wine \
+Mono or Microsoft's .NET implementation. Wine Mono was not found in the mod launcher Wine prefix, \
+would you like to install Microsoft's implementation? This may provide less consistent \
+results.")"; then
               return 1
             fi
           fi
@@ -404,8 +415,8 @@ Microsoft's implementation? This may provide less consistent results."; then
           # Path to the log file for when Winetricks is installing the MS .NET 3.5 runtime.
           local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
           if ! run "winetricks -q \"$winetricks_verb\"" "$dotnet35_log"; then
-            zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the Microsoft \
-.NET 3.5 runtime. See \"${dotnet35_log/&/&amp;}\" for more info."
+            zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$(sanitize_zenity "Failed to install the Microsoft \
+.NET 3.5 runtime. See \"${dotnet35_log}\" for more info.")"
             echo "# An error occured while initializing the Wine prefix."
             return 1
           fi
@@ -427,13 +438,15 @@ Microsoft's implementation? This may provide less consistent results."; then
         local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
 reinitializing with \"$PROGRAM_NAME -i\"."
         echo "? $no_runtime_text"
-        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$no_runtime_text"
+        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$(sanitize_zenity \
+          "$no_runtime_text")"
         return 1
       elif [[ $need_msdotnet = true ]]; then
         local -r need_msdotnet_text="Microsoft .NET 3.5 runtime installation not found. Wine Mono \
 was found, but is not supported by mod launcher version $mod_launcher_version."
         echo "? $need_msdotnet_text"
-        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$need_msdotnet_text"
+        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$(sanitize_zenity \
+          "$need_msdotnet_text")"
         return 1
       fi
     fi
@@ -480,10 +493,10 @@ REGEDIT4
 EOF
         wine regedit "$reg"
       else
-        zenity --width 500 --warning --text "Failed to find SHAR directory to use. To learn how to \
-set this up, see the wiki: \
+        zenity --width 500 --warning --text "$(sanitize_zenity "Failed to find SHAR directory to \
+        use. To learn how to set this up, see the wiki: \
 https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories. You \
-may manually set the game path in the mod launcher interface."
+may manually set the game path in the mod launcher interface.")"
       fi
     else
       echo "! SHAR path is already configured."
@@ -507,8 +520,8 @@ may manually set the game path in the mod launcher interface."
       elif [[ "$extension" = "lmlh" ]]; then
         mod_launcher_arguments+=(-hack Z:"$file")
       else
-        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "File \"$file\" not recognized as \
-a file handled by the mod launcher, ignoring."
+        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "$(sanitize_zenity "File \"$file\" not recognized as \
+a file handled by the mod launcher, ignoring.")"
       fi
     done
 
