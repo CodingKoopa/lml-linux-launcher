@@ -293,8 +293,8 @@ Exiting."
     # Suggested package name, reused for most of this launcher's support files.
     local -r PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
 
-    # Path to directory within the user data directory for storing logs. This is something specific to
-    # this Linux launcher, and is not a part of the original mod launcher.
+    # Path to directory within the user data directory for storing logs. This is something specific
+    # to this Linux launcher, and is not a part of the original mod launcher.
     local -r log_dir="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Logs"
     mkdir -p "$log_dir"
     # Path to the log file for when Wine is booting up.
@@ -343,8 +343,8 @@ may not be correctly installed."
         need_msdotnet=true
         force_microsoft_net=true
       fi
-      # Version 1.22 introduced jump lists, which throw an exception when used in Wine. 1.25 disables
-      # this automatically when running in Wine.
+      # Version 1.22 introduced jump lists, which throw an exception when used in Wine. 1.25
+      # disables this automatically when running in Wine.
       if version_compare_operator "$mod_launcher_version" ">" "1.21" &&
         version_compare_operator "$mod_launcher_version" "<" "1.25"; then
         echo "! Mod launcher version is >=1.22 and <1.25, disabling jump list."
@@ -392,10 +392,10 @@ may not be correctly installed."
         else
           # If Microsoft .NET is being forced, there's no need to warn against it.
           if [[ $force_microsoft_net = false ]]; then
-            if ! zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Lucas' Simpsons Hit &amp; \
-Run Mod Launcher needs a .NET runtime to run, either Wine Mono or Microsoft's .NET implementation. \
-Wine Mono was not found in the mod launcher Wine prefix, would you like to install Microsoft's \
-implementation? This may provide less consistent results."; then
+            if ! zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Lucas' Simpsons Hit \
+&amp; Run Mod Launcher needs a .NET runtime to run, either Wine Mono or Microsoft's .NET \
+implementation. Wine Mono was not found in the mod launcher Wine prefix, would you like to install \
+Microsoft's implementation? This may provide less consistent results."; then
               return 1
             fi
           fi
@@ -440,20 +440,20 @@ was found, but is not supported by mod launcher version $mod_launcher_version."
     increment_progress
 
     echo "# Checking registry."
-    # This regex matches the section of the Wine "reg" registry file where the mod launcher stores the
-    # game EXE path.
+    # This regex matches the section of the Wine "reg" registry file where the mod launcher stores
+    # the game EXE path.
 
-    # Whenever it's necessary to input a registry path, eight backslashes are needed, \\\\\\\\. Here's
-    # how it's processed:
+    # Whenever it's necessary to input a registry path, eight backslashes are needed, \\\\\\\\.
+    # Here's how it's processed:
     # - When interpreting this script, Bash escapes each couple of backslashes, becoming \\\\.
     # - When interpreting the temprary input "reg" file, regedit interprets \x, where x is a
     # character, as an escape sequence. Therefore, regedit also escapes each couple of backslashes,
     # becoming \\. I'm not entirely sure why, in the registry, it is stored like this.
 
-    # TODO: Grep's "-z" option separates each line by a null character. This is necessary here to make
-    # a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a NUL. To
-    # get around this, "." is currently used to match the null character, but it might be better to
-    # convert the pattern to that of Perl's and properly match it.
+    # TODO: Grep's "-z" option separates each line by a null character. This is necessary here to
+    # make a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a
+    # NUL. To get around this, "." is currently used to match the null character, but it might be
+    # better to convert the pattern to that of Perl's and properly match it.
     if [[ $always_set_registry_key = true ]] ||
       ! grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] \
 [0-9]{10} [0-9]{7}.#time=([0-9]|[a-z]){15}.\
