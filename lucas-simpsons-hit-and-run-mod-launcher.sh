@@ -429,8 +429,8 @@ results.")"; then
           # Path to the log file for when Winetricks is installing the MS .NET 3.5 runtime.
           local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
           if ! run "winetricks -q \"$winetricks_verb\"" "$dotnet35_log"; then
-            zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$(sanitize_zenity "Failed to install the Microsoft \
-.NET 3.5 runtime. See \"${dotnet35_log}\" for more info.")"
+            zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$(sanitize_zenity "Failed to \
+install the Microsoft .NET 3.5 runtime. See \"${dotnet35_log}\" for more info.")"
             echo "# An error occured while initializing the Wine prefix."
             return 1
           fi
@@ -460,8 +460,8 @@ results.")"; then
             "$no_runtime_text")"
           return 1
         elif [[ $need_msdotnet = true ]]; then
-          local -r need_msdotnet_text="Microsoft .NET 3.5 runtime installation not found. Wine Mono \
-  was found, but is not supported by mod launcher version $mod_launcher_version."
+          local -r need_msdotnet_text="Microsoft .NET 3.5 runtime installation not found. Wine \
+Mono was found, but is not supported by mod launcher version $mod_launcher_version."
           echo "? $need_msdotnet_text"
           zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$(sanitize_zenity \
             "$need_msdotnet_text")"
@@ -543,8 +543,8 @@ may manually set the game path in the mod launcher interface.")"
       elif [[ "$extension" = "lmlh" ]]; then
         mod_launcher_arguments+=(-hack Z:"$file")
       else
-        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "$(sanitize_zenity "File \"$file\" not recognized as \
-a file handled by the mod launcher, ignoring.")"
+        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "$(sanitize_zenity "File \"$file\" \
+not recognized as a file handled by the mod launcher, ignoring.")"
       fi
     done
 
