@@ -389,24 +389,23 @@ may not be correctly installed."
         increment_progress
         # No further action necessary. How nice ;)
       else
-        # If Microsoft .NET is being forced, there's no need to warn against it.
-        if [[ $force_microsoft_net = false ]]; then
-          if ! zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Lucas' Simpsons Hit &amp; \
-Run Mod Launcher needs a .NET runtime to run, either Wine Mono or Microsoft's .NET implementation. \
-Wine Mono was not found in the mod launcher Wine prefix, would you like to use Microsoft's \
-implementation? This may provide less consistent results."; then
-            return 1
-          fi
-        fi
-
-        # Path to the log file for when Winetricks is installing the MS .NET 3.5 runtime.
-        local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
-
         if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
           echo "# Using Microsoft .NET 3.5 runtime."
           increment_progress
         else
+          # If Microsoft .NET is being forced, there's no need to warn against it.
+          if [[ $force_microsoft_net = false ]]; then
+            if ! zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Lucas' Simpsons Hit &amp; \
+Run Mod Launcher needs a .NET runtime to run, either Wine Mono or Microsoft's .NET implementation. \
+Wine Mono was not found in the mod launcher Wine prefix, would you like to use Microsoft's \
+implementation? This may provide less consistent results."; then
+              return 1
+            fi
+          fi
+
           echo "# Installing Microsoft .NET 3.5 runtime. This will take a while."
+          # Path to the log file for when Winetricks is installing the MS .NET 3.5 runtime.
+          local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
           if ! run "winetricks -q \"$winetricks_verb\"" "$dotnet35_log"; then
             zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the Microsoft \
 .NET 3.5 runtime. See \"${dotnet35_log/&/&amp;}\" for more info."
