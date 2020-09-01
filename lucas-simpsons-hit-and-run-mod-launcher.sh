@@ -107,11 +107,12 @@ function zenity_echo() {
       break
     fi
     # Identify any error messages, as the return codes from the subshell are otherwise lost.
-    if [[ ${line,,} = *error* ]]; then
+    if [[ ${line,,} = error:* ]]; then
       ret=1
     fi
     echo "$line"
   done </dev/stdin
+  echo "Zenity has finished."
   # If EOF was never reached, then the cancel button was probably clicked. In that case, make
   # sure this isn't considered a success.
   if [[ $eof_reached = false ]]; then
