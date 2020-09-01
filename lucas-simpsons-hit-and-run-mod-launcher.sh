@@ -514,19 +514,22 @@ a file handled by the mod launcher, ignoring."
       fi
     done
 
-    # This should be 100.
-    increment_progress
     if [[ $log_to_stdout = true ]]; then
-      echo "# Keep this dialog open to continue logging."
+      echo "# Finished. Keep this dialog open to continue logging."
     else
-      echo EOF
+      echo "# Finished."
     fi
+    # This should get the progress bar to 100%. If --auto-close is being used, the dialog will be
+    # closed at this point.
+    increment_progress
 
     # Launch the mod launcher.
     # We don't have to pass a hacks directory because, the way the structure works out, the launcher
     # can already see them anyways.
     run "wine \"$MOD_LAUNCHER_EXECUTABLE\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
       ${mod_launcher_arguments[*]}" "$launcher_log"
+
+    echo EOF
   ) | tee >(zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress) | zenity_echo
 }
 
