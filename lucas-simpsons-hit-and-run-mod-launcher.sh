@@ -455,8 +455,8 @@ was found, but is not supported by mod launcher version $mod_launcher_version."
     # get around this, "." is currently used to match the null character, but it might be better to
     # convert the pattern to that of Perl's and properly match it.
     if [[ $always_set_registry_key = true ]] ||
-      grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] [0-9]{10} \
-[0-9]{7}.#time=([0-9]|[a-z]){15}.\
+      ! grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] \
+[0-9]{10} [0-9]{7}.#time=([0-9]|[a-z]){15}.\
 \"Game EXE Path\"=\".+\".\
 \"Game Path\"=\".+\"" "$WINEPREFIX/user.reg"; then
 
@@ -485,6 +485,8 @@ set this up, see the wiki: \
 https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories. You \
 may manually set the game path in the mod launcher interface."
       fi
+    else
+      echo "! SHAR path is already configured."
     fi
     increment_progress
 
