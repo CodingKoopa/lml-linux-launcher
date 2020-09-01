@@ -356,11 +356,10 @@ may not be correctly installed."
         echo "! Mod launcher version is >=1.13 and <1.22.4, requiring .NET 3.5 Service Pack 1."
         winetricks_verb=${winetricks_verb}sp1
       fi
-      increment_progress
     else
       echo "# Workaround detection disabled, skipping."
-      increment_progress
     fi
+    increment_progress
 
     # Then, initialize the Wine prefix if we have to.
 
@@ -386,12 +385,10 @@ may not be correctly installed."
       echo "# Looking for .NET runtime."
       if [[ $force_microsoft_net != true ]] && wine uninstaller --list | grep -q "Wine Mono"; then
         echo "# Using Mono .NET runtime."
-        increment_progress
         # No further action necessary. How nice ;)
       else
         if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
           echo "# Using Microsoft .NET 3.5 runtime."
-          increment_progress
         else
           # If Microsoft .NET is being forced, there's no need to warn against it.
           if [[ $force_microsoft_net = false ]]; then
@@ -412,9 +409,9 @@ implementation? This may provide less consistent results."; then
             echo "# An error occured while initializing the Wine prefix."
             return 1
           fi
-          increment_progress
         fi
       fi
+      increment_progress
     else
       # Skip over the Wine prefix initialization steps.
       increment_progress 3
