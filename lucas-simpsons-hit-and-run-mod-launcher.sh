@@ -328,6 +328,17 @@ $MOD_LAUNCHER_EXECUTABLE. The package may not be correctly installed.")"
     export WINEARCH=win32
     # Path to the Wine prefix, in the user data directory.
     export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
+    # Path to our working directory within the Wine prefix.
+    local -r prefix_lmlll_dir=$WINEPREFIX/drive_c/ProgramData/lml-linux-launcher
+    mkdir -p "$prefix_lmlll_dir"
+    # File used to determine whether the prefix is already in a working state.
+    working_file=$prefix_lmlll_dir/working
+
+    # This will also be set when
+    local assume_working=false
+    if [[ -f $working_file ]]; then
+      assume_working=true
+    fi
 
     echo "! Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX"
 
@@ -382,6 +393,7 @@ $MOD_LAUNCHER_EXECUTABLE. The package may not be correctly installed.")"
       if [[ "$force_delete_prefix" = true ]]; then
         echo "! Deleting Wine prefix."
         rm -rf "$WINEPREFIX"
+        mkdir -p "$prefix_lmlll_dir"
       fi
 
       echo "# Booting up Wine."
@@ -425,6 +437,9 @@ results.")"; then
         fi
       fi
       increment_progress
+      # We don't really need to check for .NET as we just installed it, and this code shouldn't be
+      # executed if that failed.
+      assume_working=true
     else
       # Skip over the Wine prefix initialization steps.
       increment_progress 3
@@ -432,25 +447,29 @@ results.")"; then
 
     # Then, do some house keeping with the Wine prefix.
 
-    echo "# Checking .NET runtime."
-    echo "! Checking for Microsoft .NET."
-    if ! [[ $(winetricks list-installed) == *"$winetricks_verb"* ]]; then
-      echo "! Checking for Mono .NET."
-      if ! wine uninstaller --list | grep -q "Wine Mono"; then
-        local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
-reinitializing with \"$PROGRAM_NAME -i\"."
-        echo "? $no_runtime_text"
-        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$(sanitize_zenity \
-          "$no_runtime_text")"
-        return 1
-      elif [[ $need_msdotnet = true ]]; then
-        local -r need_msdotnet_text="Microsoft .NET 3.5 runtime installation not found. Wine Mono \
-was found, but is not supported by mod launcher version $mod_launcher_version."
-        echo "? $need_msdotnet_text"
-        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$(sanitize_zenity \
-          "$need_msdotnet_text")"
-        return 1
+    if [[ $assume_working == false ]]; then
+      echo "# Checking .NET runtime."
+      echo "! Checking for Microsoft .NET."
+      if ! [[ $(winetricks list-installed) == *"$winetricks_verb"* ]]; then
+        echo "! Checking for Mono .NET."
+        if ! wine uninstaller --list | grep -q "Wine Mono"; then
+          local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
+  reinitializing with \"$PROGRAM_NAME -i\"."
+          echo "? $no_runtime_text"
+          zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$(sanitize_zenity \
+            "$no_runtime_text")"
+          return 1
+        elif [[ $need_msdotnet = true ]]; then
+          local -r need_msdotnet_text="Microsoft .NET 3.5 runtime installation not found. Wine Mono \
+  was found, but is not supported by mod launcher version $mod_launcher_version."
+          echo "? $need_msdotnet_text"
+          zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$(sanitize_zenity \
+            "$need_msdotnet_text")"
+          return 1
+        fi
       fi
+    else
+      echo "# Assuming .NET runtime is working."
     fi
     increment_progress
 
@@ -486,7 +505,7 @@ was found, but is not supported by mod launcher version $mod_launcher_version."
 
       if [[ -d $shar_directory ]]; then
         echo "# Configuring the mod launcher to use SHAR directory \"$shar_directory\"."
-        reg=$WINEPREFIX/drive_c/windows/temp/lml_set_game_exe_path.reg
+        reg=$prefix_lmlll_dir/lml_set_game_exe_path.reg
         cat <<EOF >"$reg"
 REGEDIT4
 
@@ -495,6 +514,7 @@ REGEDIT4
 "Game Path"="$(winepath -w "$shar_directory" | sed -E "s/\\\/\\\\\\\\/g")"
 EOF
         wine regedit "$reg"
+        rm "$reg"
       else
         zenity --width 500 --warning --text "$(sanitize_zenity "Failed to find SHAR directory to \
         use. To learn how to set this up, see the wiki: \
@@ -540,8 +560,15 @@ a file handled by the mod launcher, ignoring.")"
     # Launch the mod launcher.
     # We don't have to pass a hacks directory because, the way the structure works out, the launcher
     # can already see them anyways.
-    run "wine \"$MOD_LAUNCHER_EXECUTABLE\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
-      ${mod_launcher_arguments[*]}" "$launcher_log"
+    if run "wine \"$MOD_LAUNCHER_EXECUTABLE\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
+      ${mod_launcher_arguments[*]}" "$launcher_log"; then
+      # Indicate that the launcher successfully launched, and that we probably don't have to check
+      # for .NET next time.
+      touch "$working_file"
+    else
+      # Indicate that something here is broken.
+      rm "$working_file"
+    fi
 
     echo EOF
   ) | tee >(zenity "${ZENITY_COMMON_ARGUMENTS[@]}" "${ZENITY_PROGRESS_ARGUMENTS[@]}" --progress) |
