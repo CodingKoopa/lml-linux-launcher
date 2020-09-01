@@ -113,12 +113,27 @@ function zenity_echo() {
     echo "$line"
   done </dev/stdin
   echo "Zenity has finished."
-  # If EOF was never reached, then the cancel button was probably clicked. In that case, make
-  # sure this isn't considered a success.
+  # If EOF was never reached, then the cancel button was probably clicked. In that case, make sure
+  # this isn't considered a success.
   if [[ $eof_reached = false ]]; then
     ret=2
   fi
   return $ret
+}
+
+# Runs a command, redirecting log output to a file and to stdout.
+# Variables Read:
+#   - log_to_stdout: Whether to log to stdout.
+# Outputs:
+#   - Command output, if $log_to_stdout=true.
+function run() {
+  local command=$1
+  local -r log_file=$2
+  if [[ $log_to_stdout = true ]]; then
+    eval "$command" 2>&1 | tee "$log_file"
+  else
+    eval "$command" &>"$log_file"
+  fi
 }
 
 # Prints the help message for this script.
@@ -129,6 +144,7 @@ function print_help() {
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
   -h    Show this help message and exit.
+  -l    Enable logging of Wine and Winetricks to stdout, in addition to the log files.
   -i    Force the initialization of the Wine prefix.
   -d    If initializing, force the deletion of the existing prefix, if present.
   -m    If iniitalizing, force the usage of Microsoft .NET even if Wine Mono is available.
@@ -169,13 +185,17 @@ Exiting."
     detect_version=false
   fi
 
+  local log_to_stdout=false
   local force_init=false
   local force_delete_prefix=false
   local always_set_registry_key=false
   local force_microsoft_net=false
 
-  while getopts "idrm" opt; do
+  while getopts "lidrm" opt; do
     case $opt in
+    l)
+      log_to_stdout=true
+      ;;
     i)
       force_init=true
       ;;
@@ -202,10 +222,19 @@ Exiting."
 
   # Set up some utilities for using Zenity.
 
-  local -ra ZENITY_COMMON_ARGUMENTS=(
+  local -a ZENITY_COMMON_ARGUMENTS=(
     --title "Lucas' Simpsons Hit & Run Mod Launcher"
     --width 500
   )
+
+  # If we log to stdout, Zenity interprets some of Wine's output as percentages, which ruins the
+  # progress bar, as well as --auto-close.
+  if [[ $log_to_stdout = true ]]; then
+    # Pulsate rather than having a fixed position bar.
+    ZENITY_COMMON_ARGUMENTS+=(--pulsate)
+  else
+    ZENITY_COMMON_ARGUMENTS+=(--auto-close)
+  fi
 
   # This subshell is where all of the work with preparing the Wine prefix and launching the launcher
   # is done. It is piped to Zenity to provide a progress bar throughout the process, as well as
@@ -301,13 +330,13 @@ may not be correctly installed."
       fi
 
       echo "# Booting up Wine."
-      wineboot &>"$wineboot_log"
+      run wineboot "$wineboot_log"
       increment_progress
 
       echo "# Smoothening fonts."
       # Enable font smoothing. Running this every launch is suboptimal, but necessary because
       # winecfg may reset the setting.
-      winetricks fontsmooth=rgb &>"$log_dir/winetricks-fontsmooth.log"
+      run "winetricks fontsmooth=rgb" "$log_dir/winetricks-fontsmooth.log"
       increment_progress
 
       echo "# Looking for .NET runtime."
@@ -334,7 +363,7 @@ implementation? This may provide less consistent results."; then
           increment_progress
         else
           echo "# Installing Microsoft .NET 3.5 runtime. This will take a while."
-          if ! winetricks -q $winetricks_verb &>"$dotnet35_log"; then
+          if ! run "winetricks -q \"$winetricks_verb\"" "$dotnet35_log"; then
             zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "Failed to install the Microsoft \
 .NET 3.5 runtime. See \"${dotnet35_log/&/&amp;}\" for more info."
             echo "# An error occured while initializing the Wine prefix."
@@ -434,21 +463,25 @@ may manually set the game path in the mod launcher interface."
       elif [[ "$extension" = "lmlh" ]]; then
         mod_launcher_arguments+=(-hack Z:"$file")
       else
-        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "File \"$file\" not recognized as a \
-file handled by the mod launcher, ignoring."
+        zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --warning --text "File \"$file\" not recognized as \
+a file handled by the mod launcher, ignoring."
       fi
     done
 
     # This should be 100.
     increment_progress
-    echo EOF
+    if [[ $log_to_stdout = true ]]; then
+      echo "# Keep this dialog open to continue logging."
+    else
+      echo EOF
+    fi
 
     # Launch the mod launcher.
     # We don't have to pass a hacks directory because, the way the structure works out, the launcher
     # can already see them anyways.
-    wine "$MOD_LAUNCHER_EXECUTABLE" -mods "Z:/usr/share/$PACKAGE_NAME/mods/" \
-      "${mod_launcher_arguments[@]}" &>"$launcher_log"
-  ) | tee >(zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress --auto-close) | zenity_echo
+    run "wine \"$MOD_LAUNCHER_EXECUTABLE\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
+      ${mod_launcher_arguments[*]}" "$launcher_log"
+  ) | tee >(zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --progress) | zenity_echo
 }
 
 lml_linux_launcher "$@"
