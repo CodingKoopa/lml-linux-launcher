@@ -156,7 +156,7 @@ function zenity_echo() {
       winemsg "$line"
     fi
   done </dev/stdin
-  echo "Zenity has finished."
+  info "Zenity has finished."
   # If EOF was never reached, then the cancel button was probably clicked. In that case, make sure
   # this isn't considered a success.
   if [[ $eof_reached = false ]]; then
@@ -216,7 +216,7 @@ For more info, see the wiki: https://gitlab.com/CodingKoopa/lml-linux-launcher/-
 #   - WINEARCH: See Wine documentation.
 #   - WINEPREFIX: See Wine documentation.
 function lml_linux_launcher() {
-  echo "Lucas' Simpsons Hit and Run Mod Launcher Linux Launcher version v0.1.1 starting."
+  info "Lucas' Simpsons Hit and Run Mod Launcher Linux Launcher version v0.1.1 starting."
 
   if ! command -v zenity &>/dev/null; then
     error "zenity not found. Please install it via your package manager to use this script. \
@@ -245,7 +245,7 @@ Exiting."
       ;;
     d)
       if [[ $force_init != true ]]; then
-        echo "Warning: \"-d\" doesn't do anything without \"-i\"."
+        error "\"-d\" doesn't do anything without \"-i\", ignoring."
       fi
       force_delete_prefix=true
       ;;
@@ -339,7 +339,7 @@ may not be correctly installed."
       echo "# Applying workarounds for mod launcher version $mod_launcher_version."
       # Until version 1.25, Mono does not work with the mod launcher.
       if version_compare_operator "$mod_launcher_version" "<" "1.25"; then
-        echo "Mod launcher version is <1.25, disabling Mono support."
+        echo "! Mod launcher version is <1.25, disabling Mono support."
         need_msdotnet=true
         force_microsoft_net=true
       fi
@@ -347,13 +347,13 @@ may not be correctly installed."
       # this automatically when running in Wine.
       if version_compare_operator "$mod_launcher_version" ">" "1.21" &&
         version_compare_operator "$mod_launcher_version" "<" "1.25"; then
-        echo "Mod launcher version is >=1.22 and <1.25, disabling jump list."
+        echo "! Mod launcher version is >=1.22 and <1.25, disabling jump list."
         noupdatejumplist=true
       fi
       # Version 1.13 introduced a requirement for Service Pack 1, which was removed in 1.22.4.
       if version_compare_operator "$mod_launcher_version" ">" "1.12.1" &&
         version_compare_operator "$mod_launcher_version" "<" "1.22.4"; then
-        echo "Mod launcher version is >=1.13 and <1.22.4, requiring .NET 3.5 Service Pack 1."
+        echo "! Mod launcher version is >=1.13 and <1.22.4, requiring .NET 3.5 Service Pack 1."
         winetricks_verb=${winetricks_verb}sp1
       fi
       increment_progress
