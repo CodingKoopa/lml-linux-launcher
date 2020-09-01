@@ -102,7 +102,7 @@ function zenity_echo() {
       continue
     fi
     # Break on the first EOF received.
-    if [[ $line = *EOF* ]]; then
+    if [[ $line = EOF ]]; then
       eof_reached=true
       break
     fi
