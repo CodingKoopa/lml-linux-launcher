@@ -397,7 +397,7 @@ may not be correctly installed."
           if [[ $force_microsoft_net = false ]]; then
             if ! zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --question --text "Lucas' Simpsons Hit &amp; \
 Run Mod Launcher needs a .NET runtime to run, either Wine Mono or Microsoft's .NET implementation. \
-Wine Mono was not found in the mod launcher Wine prefix, would you like to use Microsoft's \
+Wine Mono was not found in the mod launcher Wine prefix, would you like to install Microsoft's \
 implementation? This may provide less consistent results."; then
               return 1
             fi
