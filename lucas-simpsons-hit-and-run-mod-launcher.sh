@@ -471,7 +471,8 @@ was found, but is not supported by mod launcher version $mod_launcher_version."
     # better to convert the pattern to that of Perl's and properly match it.
     if [[ $always_set_registry_key = true ]] ||
       ! grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] \
-[0-9]{10} [0-9]{7}.#time=([0-9]|[a-z]){15}.\
+[0-9]{10}( [0-9]{7})*.\
+#time=([0-9]|[a-z]){15}.\
 \"Game EXE Path\"=\".+\".\
 \"Game Path\"=\".+\"" "$WINEPREFIX/user.reg"; then
 
