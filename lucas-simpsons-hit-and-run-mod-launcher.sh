@@ -2,6 +2,42 @@
 
 PROGRAM_NAME=${0##*/}
 
+# Prints an info message.
+# Arguments:
+#   - Info to be printed.
+# Outputs:
+#   - The info message.
+function info() {
+  printf "[$(tput setaf 6)Info$(tput sgr0)] %s\n" "$*"
+}
+
+# Prints an error message.
+# Arguments:
+#   - Error to be printed.
+# Outputs:
+#   - The error message.
+function error() {
+  printf "[$(tput setaf 1)Error$(tput sgr0)] %s\n" "$*"
+}
+
+# Prints a progress message.
+# Arguments:
+#   - Progress to be printed.
+# Outputs:
+#   - The progress message.
+function progress() {
+  printf "[$(tput setaf 2)Progress$(tput sgr0)] %s\n" "$*"
+}
+
+# Prints a Wine message.
+# Arguments:
+#   - Wine/Winetricks message to be printed.
+# Outputs:
+#   - The Wine message.
+function winemsg() {
+  printf "[$(tput setaf 5)Wine$(tput sgr0)] %s\n" "$*"
+}
+
 # Compares two semantic version strings. See: https://stackoverflow.com/a/4025065.
 # Arguments:
 #   - The first version.
@@ -84,7 +120,8 @@ function increment_progress() {
 
 # Echos output originally intended for Zenity. This function filters out percentages from
 # increment_progress(), as well as the "# " prefix. This function also handles errors that arrise
-# during the execution of the subshell, or from the cancel button being clicked.
+# during the execution of the subshell, or from the cancel button being clicked. Finally, this
+# handles our own "! " and "? " prefixes.
 # Outputs:
 #   - Filtered /dev/stdin contents.
 # Returns:
@@ -95,8 +132,6 @@ function zenity_echo() {
   local ret=0
   local eof_reached=false
   while read -r line; do
-    # Remove the "# " used by Zenity to mark text to display.
-    line=${line#"# "}
     # Ignore display number percentages used by Zenity.
     if [[ $line =~ ^[0-9]+$ ]]; then
       continue
@@ -110,7 +145,16 @@ function zenity_echo() {
     if [[ ${line,,} = error:* ]]; then
       ret=1
     fi
-    echo "$line"
+    if [[ $line =~ ^\# ]]; then
+      # Remove the "# " used by Zenity to mark text to display.
+      progress "${line#"# "}"
+    elif [[ $line =~ ^\! ]]; then
+      info "${line#"! "}"
+    elif [[ $line =~ ^\? ]]; then
+      error "${line#"? "}"
+    else
+      winemsg "$line"
+    fi
   done </dev/stdin
   echo "Zenity has finished."
   # If EOF was never reached, then the cancel button was probably clicked. In that case, make sure
@@ -175,13 +219,13 @@ function lml_linux_launcher() {
   echo "Lucas' Simpsons Hit and Run Mod Launcher Linux Launcher version v0.1.1 starting."
 
   if ! command -v zenity &>/dev/null; then
-    echo "Error: zenity not found. Please install it via your package manager to use this script. \
+    error "zenity not found. Please install it via your package manager to use this script. \
 Exiting."
     return 1
   fi
   local detect_version=true
   if ! command -v wrestool &>/dev/null; then
-    echo "wrestool not found, will assume latest mod launcher is being used."
+    error "wrestool not found, will assume latest mod launcher is being used."
     detect_version=false
   fi
 
@@ -273,7 +317,7 @@ may not be correctly installed."
     # Path to the Wine prefix, in the user data directory.
     export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
 
-    echo "Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX"
+    echo "! Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX"
 
     increment_progress
 
@@ -325,7 +369,7 @@ may not be correctly installed."
     if [[ "$force_init" = true || ! -d "$WINEPREFIX" ]]; then
       # Remove the Wine prefix, if specfied.
       if [[ "$force_delete_prefix" = true ]]; then
-        echo "Deleting Wine prefix."
+        echo "! Deleting Wine prefix."
         rm -rf "$WINEPREFIX"
       fi
 
@@ -380,17 +424,19 @@ implementation? This may provide less consistent results."; then
     # Then, do some house keeping with the Wine prefix.
 
     echo "# Checking .NET runtime."
+    echo "! Checking for Microsoft .NET."
     if ! [[ $(winetricks list-installed) == *"$winetricks_verb"* ]]; then
+      echo "! Checking for Mono .NET."
       if ! wine uninstaller --list | grep -q "Wine Mono"; then
         local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
 reinitializing with \"$PROGRAM_NAME -i\"."
-        echo "Error: $no_runtime_text"
+        echo "? $no_runtime_text"
         zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$no_runtime_text"
         return 1
       elif [[ $need_msdotnet = true ]]; then
         local -r need_msdotnet_text="Microsoft .NET 3.5 runtime installation not found. Wine Mono \
 was found, but is not supported by mod launcher version $mod_launcher_version."
-        echo "Error: $need_msdotnet_text"
+        echo "? $need_msdotnet_text"
         zenity "${ZENITY_COMMON_ARGUMENTS[@]}" --error --text "$need_msdotnet_text"
         return 1
       fi
