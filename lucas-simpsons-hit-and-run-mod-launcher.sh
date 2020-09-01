@@ -206,13 +206,13 @@ Exiting."
     --width 500
   )
 
-  local -r NUM_STEPS=8
-  local step=0
-
   # This subshell is where all of the work with preparing the Wine prefix and launching the launcher
   # is done. It is piped to Zenity to provide a progress bar throughout the process, as well as
   # zenity_echo, to continue providing messages to the terminal.
   (
+    local -r NUM_STEPS=8
+    local step=0
+
     # Messages beginning with "# " are displayed in Zenity, as well as the terminal.
     echo "# Initializing."
 
