@@ -555,6 +555,7 @@ not recognized as a file handled by the mod launcher, ignoring.")"
     # This should get the progress bar to 100%. If --auto-close is being used, the dialog will be
     # closed at this point.
     increment_progress
+    echo EOF
 
     # Launch the mod launcher.
     # We don't have to pass a hacks directory because, the way the structure works out, the launcher
