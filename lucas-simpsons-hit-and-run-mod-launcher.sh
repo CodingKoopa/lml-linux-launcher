@@ -589,7 +589,7 @@ may manually set the game path in the mod launcher interface.")"
     # Launch the mod launcher.
     # We don't have to pass a hacks directory because, the way the structure works out, the launcher
     # can already see them anyways.
-    if run "wine \"$MOD_LAUNCHER_EXECUTABLE\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
+    if run "wine \"$mod_launcher_exe\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
       ${mod_launcher_arguments[*]}" "$launcher_log"; then
       # Indicate that the launcher successfully launched, and that we probably don't have to check
       # for .NET next time.
