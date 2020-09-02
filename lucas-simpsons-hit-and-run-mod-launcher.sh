@@ -576,11 +576,7 @@ may manually set the game path in the mod launcher interface.")"
 
     echo "# Launching launcher."
 
-    if [[ $log_to_stdout = true ]]; then
-      echo "# Finished. Keep this dialog open to continue logging."
-    else
-      echo "# Finished."
-    fi
+    echo "# Finished."
     # This should get the progress bar to 100%. If --auto-close is being used, the dialog will be
     # closed at this point.
     increment_progress
