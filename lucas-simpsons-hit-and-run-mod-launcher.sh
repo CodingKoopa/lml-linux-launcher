@@ -568,8 +568,6 @@ not recognized as a file handled by the mod launcher, ignoring.")"
       # Indicate that something here is broken.
       rm "$working_file"
     fi
-
-    echo EOF
   ) | tee >(zenity "${zenity_common_arguments[@]}" "${zenity_progress_arguments[@]}" --progress) |
     zenity_echo
 }
