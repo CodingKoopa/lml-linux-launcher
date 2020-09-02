@@ -566,7 +566,7 @@ not recognized as a file handled by the mod launcher, ignoring.")"
       touch "$working_file"
     else
       # Indicate that something here is broken.
-      rm "$working_file"
+      rm -f "$working_file"
     fi
   ) | tee >(zenity "${zenity_common_arguments[@]}" "${zenity_progress_arguments[@]}" --progress) |
     zenity_echo
