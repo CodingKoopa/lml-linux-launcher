@@ -29,15 +29,6 @@ function progress() {
   printf "[$(tput setaf 2)Progress$(tput sgr0)] %s\n" "$*"
 }
 
-# Prints a Wine message.
-# Arguments:
-#   - Wine/Winetricks message to be printed.
-# Outputs:
-#   - The Wine message.
-function winemsg() {
-  printf "[$(tput setaf 5)Wine$(tput sgr0)] %s\n" "$*"
-}
-
 # Compares two semantic version strings. See: https://stackoverflow.com/a/4025065.
 # Arguments:
 #   - The first version.
@@ -163,7 +154,7 @@ function zenity_echo() {
     elif [[ $line =~ ^\? ]]; then
       error "${line#"? "}"
     else
-      winemsg "$line"
+      echo "$line"
     fi
   done </dev/stdin
   info "Zenity has finished."
@@ -176,7 +167,7 @@ function zenity_echo() {
   return $ret
 }
 
-# Runs a command, redirecting log output to a file and to stdout.
+# Runs a command, redirecting log output to a file or to stdout.
 # Variables Read:
 #   - log_to_stdout: Whether to log to stdout.
 # Outputs:
@@ -185,7 +176,7 @@ function run() {
   local command=$1
   local -r log_file=$2
   if [[ $log_to_stdout = true ]]; then
-    eval "$command" 2>&1 | tee "$log_file"
+    eval "$command"
   else
     eval "$command" &>"$log_file"
   fi
@@ -195,11 +186,11 @@ function run() {
 # Outputs:
 #   - The help message.
 function print_help() {
-  echo "Usage: $PROGRAM_NAME [-hidr] [MOD/HACK...]
+  echo "Usage: $PROGRAM_NAME [-hidr] [MOD/HACK/LAUNCHER]
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
   -h    Show this help message and exit.
-  -l    Enable logging of Wine and Winetricks to stdout, in addition to the log files.
+  -l    Enable logging of Wine and Winetricks to stdout rather than to the log files.
   -i    Force the initialization of the Wine prefix.
   -d    If initializing, force the deletion of the existing prefix, if present.
   -m    If iniitalizing, force the usage of Microsoft .NET even if Wine Mono is available.
@@ -229,6 +220,8 @@ For more info, see the wiki: https://gitlab.com/CodingKoopa/lml-linux-launcher/-
 function lml_linux_launcher() {
   info "Lucas' Simpsons Hit and Run Mod Launcher Linux Launcher version v0.1.1 starting."
 
+  local -r PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
+
   if ! command -v zenity &>/dev/null; then
     error "zenity not found. Please install it via your package manager to use this script. \
 Exiting."
@@ -238,6 +231,24 @@ Exiting."
   if ! command -v wrestool &>/dev/null; then
     error "wrestool not found, will assume latest mod launcher is being used."
     detect_version=false
+  fi
+
+  # Set up some utilities for using Zenity.
+
+  local -a zenity_common_arguments=(
+    --title "Lucas' Simpsons Hit & Run Mod Launcher"
+    --width 500
+  )
+
+  local -a zenity_progress_arguments=()
+
+  # If we log to stdout, Zenity interprets some of Wine's output as percentages, which ruins the
+  # progress bar, as well as --auto-close.
+  if [[ $log_to_stdout = true ]]; then
+    # Pulsate rather than having a fixed position bar.
+    zenity_progress_arguments+=(--pulsate)
+  else
+    zenity_progress_arguments+=(--auto-close)
   fi
 
   local log_to_stdout=false
@@ -272,26 +283,67 @@ Exiting."
       ;;
     esac
   done
+
   # Shift the options over to the mod list.
   shift "$((OPTIND - 1))"
-
-  # Set up some utilities for using Zenity.
-
-  local -a zenity_common_arguments=(
-    --title "Lucas' Simpsons Hit & Run Mod Launcher"
-    --width 500
-  )
-
-  local -a zenity_progress_arguments=()
-
-  # If we log to stdout, Zenity interprets some of Wine's output as percentages, which ruins the
-  # progress bar, as well as --auto-close.
-  if [[ $log_to_stdout = true ]]; then
-    # Pulsate rather than having a fixed position bar.
-    zenity_progress_arguments+=(--pulsate)
-  else
-    zenity_progress_arguments+=(--auto-close)
+  # Generate arguments for the mod launcher from the arguments passed to the end of this script.
+  local -a mod_launcher_arguments
+  if [[ $noupdatejumplist = true ]]; then
+    mod_launcher_arguments+=(-noupdatejumplist)
   fi
+  local cli_lml=""
+  for arg in "$@"; do
+    local extension=${arg##*.}
+    if [[ "$extension" = "lmlm" ]]; then
+      # By defualt, Wine maps the Z drive to "/" on the host filesystem.
+      mod_launcher_arguments+=(-mod Z:"$arg")
+    elif [[ "$extension" = "lmlh" ]]; then
+      mod_launcher_arguments+=(-hack Z:"$arg")
+    elif [[ "$extension" = "exe" ]]; then
+      if [[ -z $cli_lml ]]; then
+        cli_lml=$arg
+      else
+        local -r multiple_exe_text="More than one EXE passed, ignoring."
+        info "$multiple_exe_text"
+        zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity \
+          "$multiple_exe_text")"
+      fi
+    else
+      unk_filetype_text="File \"$arg\" not recognized as a file handled by the mod launcher, \
+ignoring."
+      info "$unk_filetype_text"
+      zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity \
+        "$unk_filetype_text")"
+    fi
+  done
+
+  local mod_launcher_exe=""
+  if [[ -f $cli_lml ]]; then
+    mod_launcher_exe=$cli_lml
+  else
+    local user_lml_directory=$HOME/.local/lib/$PACKAGE_NAME
+    local system_lml_directory=/usr/lib/$PACKAGE_NAME
+    if [[ -d $user_lml_directory ]]; then
+      lml_directory=$user_lml_directory
+    elif [[ -d $system_lml_directory ]]; then
+      lml_directory=$system_lml_directory
+    fi
+    local -ra exe_candidates=("$lml_directory"/*.exe)
+    if [[ ${#exe_candidates[@]} -gt 1 ]]; then
+      local -r multiple_text="Multiple EXE candidates found in \"$lml_directory\". Quitting."
+      error "$multiple_text"
+      zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity \
+        "$multiple_text")"
+    elif [[ ${#exe_candidates[@]} -eq 0 ]]; then
+      local -r noexe_text="No EXE candidates found in \"$lml_directory\". Quitting."
+      error "$noexe_text"
+      zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity \
+        "$noexe_text")"
+    else
+      mod_launcher_exe=${exe_candidates[0]}
+    fi
+  fi
+  info "Using mod launcher EXE \"$mod_launcher_exe\"."
 
   # This subshell is where all of the work with preparing the Wine prefix and launching the launcher
   # is done. It is piped to Zenity to provide a progress bar throughout the process, as well as
@@ -303,9 +355,6 @@ Exiting."
     # Messages beginning with "# " are displayed in Zenity, as well as the terminal.
     echo "# Initializing."
 
-    # Suggested package name, reused for most of this launcher's support files.
-    local -r PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
-
     # Path to directory within the user data directory for storing logs. This is something specific
     # to this Linux launcher, and is not a part of the original mod launcher.
     local -r log_dir="$HOME/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Logs"
@@ -315,13 +364,11 @@ Exiting."
     # Path to the log file for the mod launcher.
     local -r launcher_log="$log_dir/wine-$PACKAGE_NAME.log"
 
-    # Path to mod launcher executable in the system library folder.
-    local -r MOD_LAUNCHER_EXECUTABLE="/usr/lib/$PACKAGE_NAME/$PACKAGE_NAME.exe"
-
-    if [[ ! -f "$MOD_LAUNCHER_EXECUTABLE" ]]; then
+    if [[ ! -f "$mod_launcher_exe" ]]; then
+      local -r notfound_text="Lucas' Simpsons Hit & Run Mod Launcher executable not found at \
+$mod_launcher_exe. The package may not be correctly installed."
       zenity --title "Lucas' Simpsons Hit & Run Mod Launcher" --width 500 --error --text \
-        "$(sanitize_zenity "Lucas' Simpsons Hit & Run Mod Launcher executable not found at \
-$MOD_LAUNCHER_EXECUTABLE. The package may not be correctly installed.")"
+        "$(sanitize_zenity "$notfound_text")"
       return 1
     fi
 
@@ -355,7 +402,7 @@ $MOD_LAUNCHER_EXECUTABLE. The package may not be correctly installed.")"
     if [[ $detect_version = true ]]; then
       # See: https://askubuntu.com/a/239722.
       local -r mod_launcher_version=$(wrestool --extract --raw --type=version \
-        "$MOD_LAUNCHER_EXECUTABLE" |
+        "$mod_launcher_exe" |
         tr '\0, ' '\t.\0' |
         sed 's/\t\t/_/g' |
         tr -c -d '[:print:]' |
@@ -528,24 +575,6 @@ may manually set the game path in the mod launcher interface.")"
     # Finally, launch Wine with the mod launcher executable.
 
     echo "# Launching launcher."
-
-    # Generate arguments for the mod launcher from the arguments passed to the end of this script.
-    local -a mod_launcher_arguments
-    if [[ $noupdatejumplist = true ]]; then
-      mod_launcher_arguments+=(-noupdatejumplist)
-    fi
-    for file in "$@"; do
-      local extension=${file##*.}
-      if [[ "$extension" = "lmlm" ]]; then
-        # By defualt, Wine maps the Z drive to "/" on the host filesystem.
-        mod_launcher_arguments+=(-mod Z:"$file")
-      elif [[ "$extension" = "lmlh" ]]; then
-        mod_launcher_arguments+=(-hack Z:"$file")
-      else
-        zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity "File \"$file\" \
-not recognized as a file handled by the mod launcher, ignoring.")"
-      fi
-    done
 
     if [[ $log_to_stdout = true ]]; then
       echo "# Finished. Keep this dialog open to continue logging."
