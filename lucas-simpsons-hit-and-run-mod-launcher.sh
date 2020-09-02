@@ -240,17 +240,6 @@ Exiting."
     --width 500
   )
 
-  local -a zenity_progress_arguments=()
-
-  # If we log to stdout, Zenity interprets some of Wine's output as percentages, which ruins the
-  # progress bar, as well as --auto-close.
-  if [[ $log_to_stdout = true ]]; then
-    # Pulsate rather than having a fixed position bar.
-    zenity_progress_arguments+=(--pulsate)
-  else
-    zenity_progress_arguments+=(--auto-close)
-  fi
-
   local log_to_stdout=false
   local force_init=false
   local force_delete_prefix=false
@@ -594,7 +583,7 @@ may manually set the game path in the mod launcher interface.")"
       # Indicate that something here is broken.
       rm -f "$working_file"
     fi
-  ) | tee >(zenity "${zenity_common_arguments[@]}" "${zenity_progress_arguments[@]}" --progress) |
+  ) | tee >(zenity "${zenity_common_arguments[@]}" --progress --auto-close) |
     zenity_echo
 }
 
