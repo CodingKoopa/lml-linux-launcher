@@ -516,6 +516,8 @@ Mono was found, but is not supported by mod launcher version $mod_launcher_versi
     increment_progress
 
     echo "# Checking registry."
+
+    user_reg="$WINEPREFIX/user.reg"
     # This regex matches the section of the Wine "reg" registry file where the mod launcher stores
     # the game EXE path.
 
@@ -526,49 +528,47 @@ Mono was found, but is not supported by mod launcher version $mod_launcher_versi
     # character, as an escape sequence. Therefore, regedit also escapes each couple of backslashes,
     # becoming \\. I'm not entirely sure why, in the registry, it is stored like this.
 
-    user_reg="$WINEPREFIX/user.reg"
-    # If the registry hasn't yet been created, then we definitely can't work with it.
-    if [[ -f $user_reg ]]; then
-      # TODO: Grep's "-z" option separates each line by a null character. This is necessary here to
-      # make a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a
-      # NUL. To get around this, "." is currently used to match the null character, but it might be
-      # better to convert the pattern to that of Perl's and properly match it.
-      if [[ $always_set_registry_key = true ]] ||
+    # TODO: Grep's "-z" option separates each line by a null character. This is necessary here to
+    # make a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a
+    # NUL. To get around this, "." is currently used to match the null character, but it might be
+    # better to convert the pattern to that of Perl's and properly match it.
+    if
+      [[ $always_set_registry_key = true ]] || [[ ! -f $user_reg ]] ||
         ! grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] \
 [0-9]{10}( [0-9]{7})*.\
 #time=([0-9]|[a-z]){15}.\
 \"Game EXE Path\"=\".+\".\
-\"Game Path\"=\".+\"" "$user_reg"; then
+\"Game Path\"=\".+\"" "$user_reg"
+    then
 
-        user_shar_directory=$HOME/.local/share/the-simpsons-hit-and-run
-        system_shar_directory=/usr/share/the-simpsons-hit-and-run
-        if [[ -d $user_shar_directory ]]; then
-          shar_directory=$user_shar_directory
-        elif [[ -d $system_shar_directory ]]; then
-          shar_directory=$system_shar_directory
-        fi
+      user_shar_directory=$HOME/.local/share/the-simpsons-hit-and-run
+      system_shar_directory=/usr/share/the-simpsons-hit-and-run
+      if [[ -d $user_shar_directory ]]; then
+        shar_directory=$user_shar_directory
+      elif [[ -d $system_shar_directory ]]; then
+        shar_directory=$system_shar_directory
+      fi
 
-        if [[ -d $shar_directory ]]; then
-          echo "# Configuring the mod launcher to use SHAR directory \"$shar_directory\"."
-          reg=$prefix_lmlll_dir/lml_set_game_exe_path.reg
-          cat <<EOF >"$reg"
+      if [[ -d $shar_directory ]]; then
+        echo "# Configuring the mod launcher to use SHAR directory \"$shar_directory\"."
+        reg=$prefix_lmlll_dir/lml_set_game_exe_path.reg
+        cat <<EOF >"$reg"
 REGEDIT4
 
 [HKEY_CURRENT_USER\\Software\\Lucas Stuff\\Lucas' Simpsons Hit & Run Tools]
 "Game EXE Path"="$(winepath -w "$shar_directory/Simpsons.exe" | sed -E "s/\\\/\\\\\\\\/g")"
 "Game Path"="$(winepath -w "$shar_directory" | sed -E "s/\\\/\\\\\\\\/g")"
 EOF
-          wine regedit "$reg"
-          rm "$reg"
-        else
-          zenity --width 500 --warning --text "$(sanitize_zenity "Failed to find SHAR directory to \
+        wine regedit "$reg"
+        rm "$reg"
+      else
+        zenity --width 500 --warning --text "$(sanitize_zenity "Failed to find SHAR directory to \
         use. To learn how to set this up, see the wiki: \
 https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories. You \
 may manually set the game path in the mod launcher interface.")"
-        fi
-      else
-        echo "! SHAR path is already configured."
       fi
+    else
+      echo "! SHAR path is already configured."
     fi
     increment_progress
 
