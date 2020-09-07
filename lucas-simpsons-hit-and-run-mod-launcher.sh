@@ -276,10 +276,8 @@ Exiting."
   # Shift the options over to the mod list.
   shift "$((OPTIND - 1))"
   # Generate arguments for the mod launcher from the arguments passed to the end of this script.
+  # N.B. this is modified later, when applying workarounds.
   local -a mod_launcher_arguments
-  if [[ $noupdatejumplist = true ]]; then
-    mod_launcher_arguments+=(-noupdatejumplist)
-  fi
   local cli_lml=""
   for arg in "$@"; do
     local extension=${arg##*.}
@@ -386,7 +384,6 @@ $mod_launcher_exe. The package may not be correctly installed."
     # Unlike $force_microsoft_net, this variable takes effect when launching, not just when
     # initializing.
     local need_msdotnet=false
-    local noupdatejumplist=false
     local winetricks_verb="dotnet35"
     if [[ $detect_version = true ]]; then
       # See: https://askubuntu.com/a/239722.
@@ -408,7 +405,7 @@ $mod_launcher_exe. The package may not be correctly installed."
       if version_compare_operator "$mod_launcher_version" ">" "1.21" &&
         version_compare_operator "$mod_launcher_version" "<" "1.25"; then
         echo "! Mod launcher version is >=1.22 and <1.25, disabling jump list."
-        noupdatejumplist=true
+        mod_launcher_arguments+=(-noupdatejumplist)
       fi
       # Version 1.13 introduced a requirement for Service Pack 1, which was removed in 1.22.4.
       if version_compare_operator "$mod_launcher_version" ">" "1.12.1" &&
