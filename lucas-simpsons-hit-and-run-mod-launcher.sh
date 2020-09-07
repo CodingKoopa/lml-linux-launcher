@@ -246,7 +246,7 @@ Exiting."
   local always_set_registry_key=false
   local force_microsoft_net=false
 
-  while getopts "lidrm" opt; do
+  while getopts "hlidrm" opt; do
     case $opt in
     l)
       log_to_stdout=true
