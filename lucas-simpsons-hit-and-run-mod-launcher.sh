@@ -186,7 +186,7 @@ function run() {
 # Outputs:
 #   - The help message.
 function print_help() {
-  echo "Usage: $PROGRAM_NAME [-hidr] [MOD/HACK/LAUNCHER]
+  echo "Usage: $PROGRAM_NAME [-hlidrm] [MOD/HACK/LAUNCHER]
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
   -h    Show this help message and exit.
