@@ -25,6 +25,9 @@ To get started with using *Lucas' Simpsons Hit & Run Mod Launcher Linux Launcher
 
 This should be all that is required to get up and running. To import your mods, you can move them to `~/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Mods/`, and run `check-for-duplicate-lmlms` in there to remove any mods that are already installed as a part of the mod launcher package.
 
+## Contributing
+For information on contributing, please see [Contributing.md](Contributing.md).
+
 ## Features
 This section is an informal introduction to what this Linux launcher offers. Complete technical documentation is available on the [wiki](https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Home).
 
