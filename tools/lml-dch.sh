@@ -27,7 +27,6 @@ function lml_dch() {
   version_var=${version_var//-/_}
   version_var=ver_${version_var}
   linux_changelog=${!version_var}
-  echo "$version_var"
 
   # TODO: Don't harcode "UNRELEASED".
   echo "lucas-simpsons-hit-and-run-launcher ($lml_package_ver) UNRELEASED; urgency=low"
