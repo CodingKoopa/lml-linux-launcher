@@ -21,8 +21,8 @@ function lml_dch() {
 
   # Read Linux specific changes.
 
-  # shellcheck disable=1091
-  source linux-changes
+  # shellcheck source=tools/linux-changelog
+  source linux-changelog
   local version_var=${lml_package_ver//./_}
   version_var=${version_var//-/_}
   version_var=ver_${version_var}
@@ -31,10 +31,16 @@ function lml_dch() {
   # TODO: Don't harcode "UNRELEASED".
   echo "lucas-simpsons-hit-and-run-launcher ($lml_package_ver) UNRELEASED; urgency=low"
   echo ""
-  echo "$linux_changelog"
+  if [[ -n "$linux_changelog" ]]; then
+    echo "$linux_changelog"
+  fi
   ./read-dt-doc.py -nd lucasmodlauncher/versions/version_"$lml_ver" | ./format.py
   echo ""
   echo " -- $(git config user.name) <$(git config user.email)> $(date -Ru)"
+  echo ""
 }
 
-lml_dch "$@"
+echo "lml-dch: lucas' mod launcher debian changelog tool"
+changelog_path=../debian/changelog
+tmp_path=tmp
+lml_dch "$@" | tee >(cat - $changelog_path >$tmp_path && mv $tmp_path $changelog_path)
