@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Example:
+# ver_1_25_1_1="\
+#   * Linux Changes
+#     - Things were blown up."
