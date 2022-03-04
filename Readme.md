@@ -59,5 +59,8 @@ This section will detail how well the mod launcher and game run with Wine.
 ### The Simpsons: Hit & Run
 *The Simpsons: Hit & Run* itself pretty much runs exactly how you would expect it to. Performance parallels that of a Windows setup, as does the graphics and sound. The only thing that is sketchy is the game's built in fullscreen functionality. I recommend that you never use the built in fullscreen mode, and instead use the *Resizeable Window* mod with the mod launcher, combined with your window manager's fullscreen (Often binded to `Alt` + `F11`.).
 
+#### File Loading
+When starting up, the main thread of SHAR creates a separate thread for loading files. The main thread intends to yield to the IO thread, and does so using the [`Sleep`](https://docs.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-sleep) function of the [Windows API](https://en.wikipedia.org/wiki/Windows_API). This function pauses the execution of the current thread, for the amount of time specified by a parameter. A value of `0` for this holds special meaning this. The behavior of `Sleep(0)` in Windows XP and earlier, which SHAR relies on, is to
+
 ## Lucas' Simpsons Hit & Run Mod Launcher
 *Lucas' Simpsons Hit & Run Mod Launcher* uses some parts of the .NET runtime not yet implemented by Wine, but the core functionality is there. The most notable feature that does not work is that clicking on a mod for more details and changing settings does not work. Additionally, showing a mod in Windows Explorer does not work. Everything that has been tested and verified to work are launching the game with any mod, decompiling and compiling mods, categorizing mods, closing the mod launcher on game boot.
