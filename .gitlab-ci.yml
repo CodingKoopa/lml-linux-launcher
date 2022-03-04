@@ -22,7 +22,7 @@ analysis:shfmt:
         - bin/*.sh
   script:
     # Check that all Bash code has proper formatting.
-    - shfmt -d .
+    - shfmt -d bin
 
 analysis:shellcheck:
   # Add to the analysis stage.
@@ -34,4 +34,4 @@ analysis:shellcheck:
         - bin/*.sh
   script:
     # Check that all Bash code is proper.
-    - shellcheck -x *.sh
+    - shellcheck -x bin/*.sh
