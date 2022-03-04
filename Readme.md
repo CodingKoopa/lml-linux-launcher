@@ -17,11 +17,13 @@ Due to differences between different Linux distributions, no installer is provid
 
 ## Usage
 To get started with using *Lucas' Simpsons Hit & Run Mod Launcher Linux Launcher*:
-- Install the mod launcher package as mentioned above.
+- Install the mod launcher from one of the sources above.
 - Click on the *Lucas' Simpsons Hit & Run Mod Launcher* application from your desktop's application launcher, or run `lucas-simpsons-hit-and-run-mod-launcher`.
-- Allow the script to setup the launcher.
+- Allow the script to boot Wine.
+  - If prompted with a Wine Mono installer, click *Install* to install the preferred Wine Mono runtime.
+  - If prompted with a Wine Gecko installer, click *Cancel* as this is not used by the mod launcher.
+- Allow the script to setup a .NET runtime.
 - Setup your `Simpsons.exe` path in the launcher UI.
-- Launch the game.
 
 This should be all that is required to get up and running. To import your mods, you can move them to `~/Documents/My Games/Lucas' Simpsons Hit & Run Mod Launcher/Mods/`, and run `check-for-duplicate-lmlms` in there to remove any mods that are already installed as a part of the mod launcher package.
 
