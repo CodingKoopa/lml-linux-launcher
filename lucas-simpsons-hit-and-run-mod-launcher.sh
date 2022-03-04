@@ -320,19 +320,12 @@ ignoring."
     elif [[ -d $system_lml_directory ]]; then
       lml_directory=$system_lml_directory
     fi
-    local -ra exe_candidates=("$lml_directory"/*.exe)
-    if [[ ${#exe_candidates[@]} -gt 1 ]]; then
-      local -r multiple_text="Multiple EXE candidates found in \"$lml_directory\". Quitting."
-      error "$multiple_text"
-      zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity \
-        "$multiple_text")"
-    elif [[ ${#exe_candidates[@]} -eq 0 ]]; then
-      local -r noexe_text="No EXE candidates found in \"$lml_directory\". Quitting."
+    mod_launcher_exe=$lml_directory/$PACKAGE_NAME.exe
+    if [[ ! -f $mod_launcher_exe ]]; then
+      local -r noexe_text="EXE \"$mod_launcher_exe\" not found. Quitting."
       error "$noexe_text"
       zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity \
         "$noexe_text")"
-    else
-      mod_launcher_exe=${exe_candidates[0]}
     fi
   fi
   info "Using mod launcher EXE \"$mod_launcher_exe\"."
