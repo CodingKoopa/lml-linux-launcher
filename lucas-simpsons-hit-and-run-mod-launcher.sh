@@ -248,6 +248,11 @@ Exiting."
 
   while getopts "hlidrm" opt; do
     case $opt in
+    h)
+      # Bail earlier than the default case.
+      print_help
+      return 0
+      ;;
     l)
       log_to_stdout=true
       ;;
