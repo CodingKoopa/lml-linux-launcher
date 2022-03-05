@@ -186,7 +186,7 @@ function run() {
 # Outputs:
 #   - The help message.
 function print_help() {
-  echo "Usage: $PROGRAM_NAME [-hlidrm] [MOD/HACK/LAUNCHER]
+  echo "Usage: $PROGRAM_NAME [-hlidrm] [-o \"MOD LAUNCHER ARGUMENTS\"] [MOD/HACK/LAUNCHER EXE]
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
   -h    Show this help message and exit.
@@ -195,6 +195,7 @@ Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
   -d    If initializing, force the deletion of the existing prefix, if present.
   -m    If initializing, force the usage of Microsoft .NET even if Wine Mono is available.
   -r    Force the setting of the mod launcher game executable path registry key.
+  -o    Passes command line arguments to the mod launcher.
 
 When ran, this script will check to see if the Wine prefix ~/.local/share/lucas-simpsons-hit-and-run
 -mod-launcher exists. If it doesn't exist, it will be created using wineboot. Then, either Wine Mono
@@ -245,8 +246,9 @@ Exiting."
   local force_delete_prefix=false
   local always_set_registry_key=false
   local force_microsoft_net=false
+  local -a mod_launcher_args
 
-  while getopts "hlidrm" opt; do
+  while getopts "hlidrmo:" opt; do
     case $opt in
     h)
       # Bail earlier than the default case.
@@ -271,6 +273,9 @@ Exiting."
     m)
       force_microsoft_net=true
       ;;
+    o)
+      mod_launcher_args+=("$OPTARG")
+      ;;
     *)
       print_help
       return 0
@@ -282,7 +287,6 @@ Exiting."
   shift "$((OPTIND - 1))"
   # Generate arguments for the mod launcher from the arguments passed to the end of this script.
   # N.B. this is modified later, when applying workarounds.
-  local -a mod_launcher_args
   local cli_lml=""
   for arg in "$@"; do
     local extension=${arg##*.}
