@@ -193,7 +193,7 @@ Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
   -l    Enable logging of Wine and Winetricks to stdout rather than to the log files.
   -i    Force the initialization of the Wine prefix.
   -d    If initializing, force the deletion of the existing prefix, if present.
-  -m    If iniitalizing, force the usage of Microsoft .NET even if Wine Mono is available.
+  -m    If initializing, force the usage of Microsoft .NET even if Wine Mono is available.
   -r    Force the setting of the mod launcher game executable path registry key.
 
 When ran, this script will check to see if the Wine prefix ~/.local/share/lucas-simpsons-hit-and-run
