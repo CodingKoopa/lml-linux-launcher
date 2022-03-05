@@ -437,7 +437,7 @@ $mod_launcher_exe. The package may not be correctly installed."
         echo "# Using Mono .NET runtime."
         # No further action necessary. How nice ;)
       else
-        if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
+        if [[ $(winetricks list-installed) == *"$winetricks_verb"* ]]; then
           echo "# Using Microsoft .NET 3.5 runtime."
         else
           # If Microsoft .NET is being forced, there's no need to warn against it.
@@ -453,10 +453,10 @@ results.")"; then
 
           echo "# Installing Microsoft .NET 3.5 runtime. This will take a while."
           # Path to the log file for when Winetricks is installing the MS .NET 3.5 runtime.
-          local -r dotnet35_log="$log_dir/winetricks-dotnet35.log"
-          if ! run "winetricks -q \"$winetricks_verb\"" "$dotnet35_log"; then
+          local -r winetricks_log="$log_dir/winetricks-$winetricks_verb.log"
+          if ! run "winetricks -q \"$winetricks_verb\"" "$winetricks_log"; then
             zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity "Failed to \
-install the Microsoft .NET 3.5 runtime. See \"${dotnet35_log}\" for more info.")"
+install the Microsoft .NET 3.5 runtime. See \"${winetricks_log}\" for more info.")"
             echo "# An error occured while initializing the Wine prefix."
             return 1
           fi
