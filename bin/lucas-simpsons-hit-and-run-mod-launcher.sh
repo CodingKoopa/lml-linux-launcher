@@ -282,15 +282,15 @@ Exiting."
   shift "$((OPTIND - 1))"
   # Generate arguments for the mod launcher from the arguments passed to the end of this script.
   # N.B. this is modified later, when applying workarounds.
-  local -a mod_launcher_arguments
+  local -a mod_launcher_args
   local cli_lml=""
   for arg in "$@"; do
     local extension=${arg##*.}
     if [[ "$extension" = "lmlm" ]]; then
       # By defualt, Wine maps the Z drive to "/" on the host filesystem.
-      mod_launcher_arguments+=(-mod Z:"$arg")
+      mod_launcher_args+=(-mod Z:"$arg")
     elif [[ "$extension" = "lmlh" ]]; then
-      mod_launcher_arguments+=(-hack Z:"$arg")
+      mod_launcher_args+=(-hack Z:"$arg")
     elif [[ "$extension" = "exe" ]]; then
       if [[ -z $cli_lml ]]; then
         cli_lml=$arg
@@ -301,11 +301,7 @@ Exiting."
           "$multiple_exe_text")"
       fi
     else
-      unk_filetype_text="File \"$arg\" not recognized as a file handled by the mod launcher, \
-ignoring."
-      info "$unk_filetype_text"
-      zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity \
-        "$unk_filetype_text")"
+      mod_launcher_args+=("$arg")
     fi
   done
 
@@ -403,7 +399,7 @@ $mod_launcher_exe. The package may not be correctly installed."
       if version_compare_operator "$mod_launcher_version" ">" "1.21" &&
         version_compare_operator "$mod_launcher_version" "<" "1.25"; then
         echo "! Mod launcher version is >=1.22 and <1.25, disabling jump list."
-        mod_launcher_arguments+=(-noupdatejumplist)
+        mod_launcher_args+=(-noupdatejumplist)
       fi
       # Version 1.13 introduced a requirement for Service Pack 1, which was removed in 1.22.4.
       if version_compare_operator "$mod_launcher_version" ">" "1.12.1" &&
@@ -570,7 +566,7 @@ may manually set the game path in the mod launcher interface.")"
     # We don't have to pass a hacks directory because, the way the structure works out, the launcher
     # can already see them anyways.
     if run "wine \"$mod_launcher_exe\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
-      ${mod_launcher_arguments[*]}" "$launcher_log"; then
+      ${mod_launcher_args[*]}" "$launcher_log"; then
       # Indicate that the launcher successfully launched, and that we probably don't have to check
       # for .NET next time.
       touch "$working_file"
