@@ -17,7 +17,7 @@ function info() {
 # Outputs:
 #   - The error message.
 function error() {
-  printf "[$(tput setaf 1)Error$(tput sgr0)] %s\n" "$*"
+  printf "[$(tput setaf 1)Error$(tput sgr0)] %s\n" "$*" >&2
 }
 
 # Prints a progress message.
