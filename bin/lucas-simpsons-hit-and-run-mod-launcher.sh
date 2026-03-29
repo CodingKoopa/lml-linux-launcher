@@ -228,7 +228,7 @@ For more info, see the wiki: https://gitlab.com/CodingKoopa/lml-linux-launcher/-
 #	- WINEARCH: See Wine documentation.
 #	- WINEPREFIX: See Wine documentation.
 function lml_linux_launcher() {
-	info "Lucas' Simpsons Hit and Run Mod Launcher Linux Launcher version v0.1.1 starting."
+	info "Launching Lucas' Simpsons Hit and Run Mod Launcher..."
 
 	local -r PACKAGE_NAME="lucas-simpsons-hit-and-run-mod-launcher"
 
