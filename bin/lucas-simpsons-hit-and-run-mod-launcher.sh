@@ -11,6 +11,15 @@ function info() {
 	printf "[$(tput setaf 6)Info$(tput sgr0)] %s\n" "$*"
 }
 
+# Prints an warning message.
+# Arguments:
+#	- Warning to be printed.
+# Outputs:
+#	- The warning message.
+function warning() {
+	printf "[$(tput setaf 3)Warning$(tput sgr0)] %s\n" "$*" >&2
+}
+
 # Prints an error message.
 # Arguments:
 #	- Error to be printed.
@@ -230,7 +239,7 @@ Exiting."
 	fi
 	local detect_version=true
 	if ! command -v wrestool &>/dev/null; then
-		error "wrestool not found, will assume latest mod launcher is being used."
+		warning "wrestool not found; will assume a recent mod launcher is being used."
 		detect_version=false
 	fi
 
@@ -411,8 +420,6 @@ $mod_launcher_exe. The package may not be correctly installed."
 				echo "! Mod launcher version is >=1.13 and <1.22.4, requiring .NET 3.5 Service Pack 1."
 				winetricks_verb=${winetricks_verb}sp1
 			fi
-		else
-			echo "# Workaround detection disabled, skipping."
 		fi
 		increment_progress
 
