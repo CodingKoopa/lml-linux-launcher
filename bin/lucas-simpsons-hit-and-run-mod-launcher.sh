@@ -523,14 +523,12 @@ Mono was found, but is not supported by mod launcher version $mod_launcher_versi
 		# make a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a
 		# NUL. To get around this, "." is currently used to match the null character, but it might be
 		# better to convert the pattern to that of Perl's and properly match it.
-		if
-			[[ $always_set_registry_key = true ]] || [[ ! -f $user_reg ]] ||
-				! grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] \
+		if [[ $always_set_registry_key = true ]] || [[ ! -f $user_reg ]] ||
+			! grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] \
 [0-9]{10}( [0-9]{7})*.\
 #time=([0-9]|[a-z]){15}.\
 \"Game EXE Path\"=\".+\".\
-\"Game Path\"=\".+\"" "$user_reg"
-		then
+\"Game Path\"=\".+\"" "$user_reg"; then
 
 			user_shar_directory=$HOME/.local/share/the-simpsons-hit-and-run
 			system_shar_directory=/usr/share/the-simpsons-hit-and-run
