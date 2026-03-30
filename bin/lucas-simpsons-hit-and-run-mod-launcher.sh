@@ -340,6 +340,35 @@ Exiting."
 	fi
 	info "Using mod launcher EXE \"$mod_launcher_exe\"."
 
+	# Architecture for Wine to use. The mod launcher only works on 32-bit.
+	# export WINEARCH=win32
+	export WINEARCH=win64
+	# Path to the Wine prefix, in the user data directory.
+	export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
+
+	# Path to our working directory within the Wine prefix.
+	local -r prefix_lmlll_dir=$WINEPREFIX/drive_c/ProgramData/lml-linux-launcher
+	mkdir -p "$prefix_lmlll_dir"
+
+	# File used to determine whether the prefix is already in a working state.
+	initialized_stamp=$prefix_lmlll_dir/initialized.stamp
+	# Indicator we place if things are broken.
+	broken_stamp=$prefix_lmlll_dir/broken.stamp
+
+	# Check this before entering the subshell so that we don't have multiple dialogs at
+	# once.
+	if [[ -f $broken_stamp ]]; then
+		if zenity "${zenity_common_arguments[@]}" --question --text \
+			"It looks like the launcher previously failed to start. Would you like to try recreating the Wine prefix?
+
+If you click \"Yes\", <b>mod launcher settings (other than the EXE path) will be reset</b>. Your saves, mods, and screenshots will remain!
+
+You can also close this window and come back later."; then
+			force_init=true
+		fi
+		rm "$broken_stamp"
+	fi
+
 	# This subshell is where all of the work with preparing the Wine prefix and launching the launcher
 	# is done. It is piped to Zenity to provide a progress bar throughout the process, as well as
 	# zenity_echo, to continue providing messages to the terminal.
@@ -365,22 +394,6 @@ $mod_launcher_exe. The package may not be correctly installed."
 			zenity --title "Lucas' Simpsons Hit & Run Mod Launcher" --width 500 --error --text \
 				"$(sanitize_zenity "$notfound_text")"
 			return 1
-		fi
-
-		# Architecture for Wine to use. The mod launcher only works on 32-bit.
-		export WINEARCH=win32
-		# Path to the Wine prefix, in the user data directory.
-		export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
-		# Path to our working directory within the Wine prefix.
-		local -r prefix_lmlll_dir=$WINEPREFIX/drive_c/ProgramData/lml-linux-launcher
-		mkdir -p "$prefix_lmlll_dir"
-		# File used to determine whether the prefix is already in a working state.
-		working_file=$prefix_lmlll_dir/working
-
-		# This will also be set when
-		local assume_working=false
-		if [[ -f $working_file ]]; then
-			assume_working=true
 		fi
 
 		echo "! Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX"
@@ -425,7 +438,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 
 		# If the user forced initialization via the "-i" argument, or there's no existing user data
 		# directory.
-		if [[ "$force_init" = true || ! -d "$WINEPREFIX" ]]; then
+		if [[ "$force_init" = true || ! -d "$WINEPREFIX" || ! -f $initialized_stamp ]]; then
 			rm -rf "$WINEPREFIX"
 			mkdir -p "$prefix_lmlll_dir"
 
@@ -463,24 +476,10 @@ $mod_launcher_exe. The package may not be correctly installed."
 					fi
 				fi
 			fi
+			touch "$initialized_stamp"
 			increment_progress
 		else
-			if [[ ! -f $working_file ]]; then
-				echo "# Checking .NET runtime..."
-				echo "! Checking for Microsoft .NET 3.5."
-				if ! has_dotnet; then
-					echo "! Checking for Mono .NET."
-					if ! has_mono || [[ $mono_possible = false ]]; then
-						local -r no_runtime_text="No .NET runtime installation found. Try re-running the launcher \
-						to recreate the prefix from scratch."
-						echo "? $no_runtime_text"
-						zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
-							"$no_runtime_text")"
-						return 1
-					fi
-				fi
-				increment_progress 3
-			fi
+			increment_progress 3
 		fi
 
 		echo "# Checking registry..."
@@ -547,14 +546,10 @@ may manually set the game path in the mod launcher interface.")"
 		# Launch the mod launcher.
 		# We don't have to pass a hacks directory because, the way the structure works out, the launcher
 		# can already see them anyways.
-		if run "wine \"$mod_launcher_exe\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
+		if ! run "wine \"$mod_launcher_exe\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
 	${mod_launcher_args[*]}" "$launcher_log"; then
-			# Indicate that the launcher successfully launched, and that we probably don't have to check
-			# for .NET next time.
-			touch "$working_file"
-		else
 			# Indicate that something here is broken.
-			rm -f "$working_file"
+			touch "$broken_stamp"
 		fi
 	) | tee >(zenity "${zenity_common_arguments[@]}" --progress --auto-close) |
 		zenity_echo
