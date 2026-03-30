@@ -470,7 +470,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 					# This cannot use -q (see the .verb).
 					if ! run "winetricks \"$winetricks_verb\"" "$winetricks_log"; then
 						zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity "Failed to \
-	install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info.")"
+install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info.")"
 						echo "# An error occured while initializing the Wine prefix."
 						return 1
 					fi
