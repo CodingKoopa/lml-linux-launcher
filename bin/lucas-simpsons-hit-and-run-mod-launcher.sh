@@ -218,6 +218,10 @@ Simpsons.exe automatically.
 For more info, see the wiki: https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/"
 }
 
+function has_mono() {
+	wine uninstaller --list 2>&1 | grep -q "Wine Mono"
+}
+
 # Launches Lucas' Simpsons Hit and Run Mod Launcher. See the readme, wiki, and above help message
 # for more information.
 # Arguments: See help message.
@@ -440,7 +444,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 			increment_progress
 
 			echo "# Looking for .NET runtime."
-			if [[ $force_microsoft_net != true ]] && wine uninstaller --list | grep -q "Wine Mono"; then
+			if [[ $force_microsoft_net != true ]] && has_mono; then
 				echo "# Using Mono .NET runtime."
 				# No further action necessary. How nice ;)
 			else
@@ -485,7 +489,7 @@ install the Microsoft .NET 3.5 runtime. See \"${winetricks_log}\" for more info.
 			echo "! Checking for Microsoft .NET."
 			if ! [[ $(winetricks list-installed) == *"$winetricks_verb"* ]]; then
 				echo "! Checking for Mono .NET."
-				if ! wine uninstaller --list | grep -q "Wine Mono"; then
+				if ! has_mono; then
 					local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
   reinitializing with \"$PROGRAM_NAME -i\"."
 					echo "? $no_runtime_text"
