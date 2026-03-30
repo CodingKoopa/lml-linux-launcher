@@ -524,7 +524,7 @@ REGEDIT4
 "Game EXE Path"="$(winepath -w "$shar_directory/Simpsons.exe" | sed -E "s/\\\/\\\\\\\\/g")"
 "Game Path"="$(winepath -w "$shar_directory" | sed -E "s/\\\/\\\\\\\\/g")"
 EOF
-				wine regedit "$reg"
+				wine regedit "$reg" 2>/dev/null
 				rm "$reg"
 			else
 				zenity --width 500 --warning --text "$(sanitize_zenity "Failed to find SHAR directory to \
