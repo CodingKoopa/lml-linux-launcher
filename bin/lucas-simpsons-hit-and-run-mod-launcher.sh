@@ -195,7 +195,7 @@ function run() {
 # Outputs:
 #	- The help message.
 function print_help() {
-	echo "Usage: $PROGRAM_NAME [-hlidrm] [-o \"MOD LAUNCHER ARGUMENTS\"] [MOD/HACK/LAUNCHER EXE]
+	echo "Usage: $PROGRAM_NAME [-hlirm] [-o \"MOD LAUNCHER ARGUMENTS\"] [MOD/HACK/LAUNCHER EXE]
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
   -h    Show this help message and exit.
@@ -264,7 +264,7 @@ Exiting."
 	local force_mono=false
 	local -a mod_launcher_args
 
-	while getopts "hlidrmo:" opt; do
+	while getopts "hlirmo:" opt; do
 		case $opt in
 		h)
 			# Bail earlier than the default case.
