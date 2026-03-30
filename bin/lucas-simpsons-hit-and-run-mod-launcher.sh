@@ -200,7 +200,7 @@ Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
   -h    Show this help message and exit.
   -l    Enable logging of Wine and Winetricks to stdout rather than to the log files.
-  -i    Force the initialization of the Wine prefix.
+  -i    Force the recreation + initialization of the Wine prefix.
   -d    If initializing, force the deletion of the existing prefix, if present.
   -m    Use Wine Mono rather than Microsoft .NET. Quicker installation, but slightly buggier UI.
   -r    Force the setting of the mod launcher game executable path registry key.
@@ -216,6 +216,10 @@ When launching the program, if ~/.local/share/the-simpsons-hit-and-run or
 Simpsons.exe automatically.
 
 For more info, see the wiki: https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/"
+}
+
+function has_dotnet() {
+	[[ $(winetricks list-installed 2>/dev/null) == *"dotnet35"* ]]
 }
 
 function has_mono() {
@@ -256,7 +260,6 @@ Exiting."
 
 	local log_to_stdout=false
 	local force_init=false
-	local force_delete_prefix=false
 	local always_set_registry_key=false
 	local force_mono=false
 	local -a mod_launcher_args
@@ -273,12 +276,6 @@ Exiting."
 			;;
 		i)
 			force_init=true
-			;;
-		d)
-			if [[ $force_init != true ]]; then
-				error "\"-d\" doesn't do anything without \"-i\", ignoring."
-			fi
-			force_delete_prefix=true
 			;;
 		r)
 			always_set_registry_key=true
@@ -402,7 +399,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 				sed 's/\t\t/_/g' |
 				tr -c -d '[:print:]' |
 				sed -r -n 's/.*Version[^0-9]*([0-9]+\.[0-9]+(\.[0-9][0-9]?)?).*/\1/p')
-			echo "# Applying workarounds for mod launcher version $mod_launcher_version."
+			echo "# Applying workarounds for mod launcher version $mod_launcher_version..."
 			# Until version 1.25, Mono does not work with the mod launcher.
 			if version_compare_operator "$mod_launcher_version" "<" "1.25"; then
 				echo "! Mod launcher version is <1.25, disabling Mono support."
@@ -429,12 +426,8 @@ $mod_launcher_exe. The package may not be correctly installed."
 		# If the user forced initialization via the "-i" argument, or there's no existing user data
 		# directory.
 		if [[ "$force_init" = true || ! -d "$WINEPREFIX" ]]; then
-			# Remove the Wine prefix, if specfied.
-			if [[ "$force_delete_prefix" = true ]]; then
-				echo "! Deleting Wine prefix."
-				rm -rf "$WINEPREFIX"
-				mkdir -p "$prefix_lmlll_dir"
-			fi
+			rm -rf "$WINEPREFIX"
+			mkdir -p "$prefix_lmlll_dir"
 
 			echo "# Creating Wine prefix..."
 			# Thanks: https://wiki.archlinux.org/title/Wine#Prevent_installing_Mono/Gecko.
