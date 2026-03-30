@@ -202,7 +202,7 @@ Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
   -l    Enable logging of Wine and Winetricks to stdout rather than to the log files.
   -i    Force the initialization of the Wine prefix.
   -d    If initializing, force the deletion of the existing prefix, if present.
-  -m    If initializing, force the usage of Microsoft .NET even if Wine Mono is available.
+  -m    Use Wine Mono rather than Microsoft .NET. Quicker installation, but slightly buggier UI.
   -r    Force the setting of the mod launcher game executable path registry key.
   -o    Passes command line arguments to the mod launcher.
 
@@ -258,7 +258,7 @@ Exiting."
 	local force_init=false
 	local force_delete_prefix=false
 	local always_set_registry_key=false
-	local force_microsoft_net=false
+	local force_mono=false
 	local -a mod_launcher_args
 
 	while getopts "hlidrmo:" opt; do
@@ -284,7 +284,7 @@ Exiting."
 			always_set_registry_key=true
 			;;
 		m)
-			force_microsoft_net=true
+			force_mono=true
 			;;
 		o)
 			mod_launcher_args+=("$OPTARG")
@@ -374,6 +374,12 @@ $mod_launcher_exe. The package may not be correctly installed."
 		export WINEARCH=win32
 		# Path to the Wine prefix, in the user data directory.
 		export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
+		if [[ $force_mono = true ]]; then
+			export WINEDLLOVERRIDES=""
+		else
+			# Don't prompt about Mono.
+			export WINEDLLOVERRIDES="mscoree=d;mshtml=d"
+		fi
 		# Path to our working directory within the Wine prefix.
 		local -r prefix_lmlll_dir=$WINEPREFIX/drive_c/ProgramData/lml-linux-launcher
 		mkdir -p "$prefix_lmlll_dir"
@@ -386,7 +392,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 			assume_working=true
 		fi
 
-		echo "! Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX"
+		echo "! Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX WINEDLLOVERRIDES=$WINEDLLOVERRIDES"
 
 		increment_progress
 
@@ -394,7 +400,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 
 		# Unlike $force_microsoft_net, this variable takes effect when launching, not just when
 		# initializing.
-		local need_msdotnet=false
+		local mono_possible=true
 		local winetricks_verb="$system_lml_directory/my_dotnet.verb"
 		if [[ $detect_version = true ]]; then
 			# See: https://askubuntu.com/a/239722.
@@ -408,8 +414,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 			# Until version 1.25, Mono does not work with the mod launcher.
 			if version_compare_operator "$mod_launcher_version" "<" "1.25"; then
 				echo "! Mod launcher version is <1.25, disabling Mono support."
-				need_msdotnet=true
-				force_microsoft_net=true
+				mono_possible=false
 			fi
 			# Version 1.22 introduced jump lists, which throw an exception when used in Wine. 1.25
 			# disables this automatically when running in Wine.
@@ -444,24 +449,22 @@ $mod_launcher_exe. The package may not be correctly installed."
 			increment_progress
 
 			echo "# Looking for .NET runtime."
-			if [[ $force_microsoft_net != true ]] && has_mono; then
+			if [[ $force_mono = true ]] && [[ $mono_possible = true ]]; then
 				echo "# Using Mono .NET runtime."
-				# No further action necessary. How nice ;)
+				if ! has_mono; then
+					# Thanks: https://github.com/Winetricks/winetricks/issues/1236#issuecomment-2145954802
+					wine control.exe appwiz.cpl install_mono
+				fi
+				if ! has_mono; then
+					zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
+						"Wine Mono still doesn't appear to be installed.")"
+					echo "# An error occured while initializing the Wine prefix."
+					return 1
+				fi
 			else
 				if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
 					echo "# Using Microsoft .NET runtime."
 				else
-					# If Microsoft .NET is being forced, there's no need to warn against it.
-					if [[ $force_microsoft_net = false ]]; then
-						if ! zenity "${zenity_common_arguments[@]}" --question --text "$(sanitize_zenity \
-							"Lucas' Simpsons Hit & Run Mod Launcher needs a .NET runtime to run, either Wine \
-Mono or Microsoft's .NET implementation. Wine Mono was not found in the mod launcher Wine prefix, \
-would you like to install Microsoft's implementation? This may provide less consistent \
-results.")"; then
-							return 1
-						fi
-					fi
-
 					echo "# Installing the Microsoft .NET runtime. You'll see a progress window pop up soon!"
 					local -r winetricks_log="$log_dir/winetricks.log"
 					# This cannot use -q (see the .verb).
@@ -486,22 +489,15 @@ install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info.")"
 
 		if [[ $assume_working = false ]]; then
 			echo "# Checking .NET runtime."
-			echo "! Checking for Microsoft .NET."
-			if ! [[ $(winetricks list-installed) == *"$winetricks_verb"* ]]; then
+			echo "! Checking for Microsoft .NET 3.5."
+			if ! [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
 				echo "! Checking for Mono .NET."
-				if ! has_mono; then
+				if ! has_mono || [[ $mono_possible = false ]]; then
 					local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
   reinitializing with \"$PROGRAM_NAME -i\"."
 					echo "? $no_runtime_text"
 					zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
 						"$no_runtime_text")"
-					return 1
-				elif [[ $need_msdotnet = true ]]; then
-					local -r need_msdotnet_text="Microsoft .NET runtime installation not found. Wine \
-Mono was found, but is not supported by mod launcher version $mod_launcher_version."
-					echo "? $need_msdotnet_text"
-					zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
-						"$need_msdotnet_text")"
 					return 1
 				fi
 			fi
