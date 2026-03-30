@@ -484,7 +484,7 @@ install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info.")"
 
 		# Then, do some house keeping with the Wine prefix.
 
-		if [[ $assume_working == false ]]; then
+		if [[ $assume_working = false ]]; then
 			echo "# Checking .NET runtime."
 			echo "! Checking for Microsoft .NET."
 			if ! [[ $(winetricks list-installed) == *"$winetricks_verb"* ]]; then
