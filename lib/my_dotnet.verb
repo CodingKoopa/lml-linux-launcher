@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Overrides EXE execution to tack a *passive* (not *quiet*!) argument. This
+# doesn't require interaction, but does show progress.
+#
+# Overriding such a broad function means that we can only add arguments that
+# work for every MS installer we run, but this is preferable to copying all
+# of the verbs (which could conceivably change to reflect newer Wine versions).
+w_try_ms_installer() {
+	_w_ms_installer=true
+
+	# The options that -q adds are, respectively:
+	#
+	# 	dotnet40: /q /c:"install.exe /q"
+	# 	dotnet48: /sfxlang:1027 /q /norestart
+	#
+	# For dotnet40, we need to not run winetricks with -q because any arguments
+	# we add in this override will get tacked onto that /c.
+	#
+	# Winetricks suggests /sfxlang (language-related) for dotnet48 quiet, but
+	# this option is incompatible with the .NET 4.0 installer.
+	w_try "$@" /norestart /passive
+	unset _w_ms_installer
+}
+
+w_metadata my_dotnet dlls
+
+load_my_dotnet() {
+	w_call dotnet35
+}
