@@ -347,11 +347,11 @@ Exiting."
 	# is done. It is piped to Zenity to provide a progress bar throughout the process, as well as
 	# zenity_echo, to continue providing messages to the terminal.
 	(
-		local -r NUM_STEPS=7
+		local -r NUM_STEPS=5
 		local step=0
 
 		# Messages beginning with "# " are displayed in Zenity, as well as the terminal.
-		echo "# Initializing."
+		echo "# Initializing..."
 
 		# Path to directory within the user data directory for storing logs. This is something specific
 		# to this Linux launcher, and is not a part of the original mod launcher.
@@ -374,12 +374,6 @@ $mod_launcher_exe. The package may not be correctly installed."
 		export WINEARCH=win32
 		# Path to the Wine prefix, in the user data directory.
 		export WINEPREFIX=$HOME/.local/share/wineprefixes/$PACKAGE_NAME
-		if [[ $force_mono = true ]]; then
-			export WINEDLLOVERRIDES=""
-		else
-			# Don't prompt about Mono.
-			export WINEDLLOVERRIDES="mscoree=d;mshtml=d"
-		fi
 		# Path to our working directory within the Wine prefix.
 		local -r prefix_lmlll_dir=$WINEPREFIX/drive_c/ProgramData/lml-linux-launcher
 		mkdir -p "$prefix_lmlll_dir"
@@ -392,9 +386,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 			assume_working=true
 		fi
 
-		echo "! Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX WINEDLLOVERRIDES=$WINEDLLOVERRIDES"
-
-		increment_progress
+		echo "! Environment: WINEARCH=$WINEARCH WINEPREFIX=$WINEPREFIX"
 
 		# First, detect the version of the exe to see if we need any workarounds.
 
@@ -444,69 +436,61 @@ $mod_launcher_exe. The package may not be correctly installed."
 				mkdir -p "$prefix_lmlll_dir"
 			fi
 
-			echo "# Booting up Wine. If prompted about Wine Mono being missing, click \"Install\"."
-			run wineboot "$wineboot_log"
+			echo "# Creating Wine prefix..."
+			# Thanks: https://wiki.archlinux.org/title/Wine#Prevent_installing_Mono/Gecko.
+			run "WINEDLLOVERRIDES=\"mshtml=d;mscoree=d\" wineboot && wineserver -w" "$wineboot_log"
 			increment_progress
 
-			echo "# Looking for .NET runtime."
+			echo "# Looking for .NET runtime..."
 			if [[ $force_mono = true ]] && [[ $mono_possible = true ]]; then
-				echo "# Using Mono .NET runtime."
 				if ! has_mono; then
+					increment_progress
+					echo "# Using Mono .NET runtime. <b>Click \"Install\" in the other window</b> if prompted!"
 					# Thanks: https://github.com/Winetricks/winetricks/issues/1236#issuecomment-2145954802
-					wine control.exe appwiz.cpl install_mono
-				fi
-				if ! has_mono; then
-					zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
-						"Wine Mono still doesn't appear to be installed.")"
-					echo "# An error occured while initializing the Wine prefix."
-					return 1
+					run "wine control.exe appwiz.cpl install_mono" "wine-mono"
+
+					if ! has_mono; then
+						zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
+							"Wine Mono still doesn't appear to be installed.")"
+						echo "# An error occured while initializing the Wine prefix."
+						return 1
+					fi
 				fi
 			else
-				if [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
-					echo "# Using Microsoft .NET runtime."
-				else
-					echo "# Installing the Microsoft .NET runtime. You'll see a progress window pop up soon!"
+				if ! has_dotnet; then
+					increment_progress
+					echo "# Installing the Microsoft .NET runtime. You'll see some more progress windows pop up soon!"
 					local -r winetricks_log="$log_dir/winetricks.log"
 					# This cannot use -q (see the .verb).
 					if ! run "winetricks \"$winetricks_verb\"" "$winetricks_log"; then
 						zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity "Failed to \
-install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info.")"
+	install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info.")"
 						echo "# An error occured while initializing the Wine prefix."
 						return 1
 					fi
 				fi
 			fi
 			increment_progress
-			# We don't really need to check for .NET as we just installed it, and this code shouldn't be
-			# executed if that failed.
-			assume_working=true
 		else
-			# Skip over the Wine prefix initialization steps.
-			increment_progress 2
-		fi
-
-		# Then, do some house keeping with the Wine prefix.
-
-		if [[ $assume_working = false ]]; then
-			echo "# Checking .NET runtime."
-			echo "! Checking for Microsoft .NET 3.5."
-			if ! [[ $(winetricks list-installed) == *"dotnet35"* ]]; then
-				echo "! Checking for Mono .NET."
-				if ! has_mono || [[ $mono_possible = false ]]; then
-					local -r no_runtime_text="No .NET runtime installation found. You can try fixing this by \
-  reinitializing with \"$PROGRAM_NAME -i\"."
-					echo "? $no_runtime_text"
-					zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
-						"$no_runtime_text")"
-					return 1
+			if [[ ! -f $working_file ]]; then
+				echo "# Checking .NET runtime..."
+				echo "! Checking for Microsoft .NET 3.5."
+				if ! has_dotnet; then
+					echo "! Checking for Mono .NET."
+					if ! has_mono || [[ $mono_possible = false ]]; then
+						local -r no_runtime_text="No .NET runtime installation found. Try re-running the launcher \
+						to recreate the prefix from scratch."
+						echo "? $no_runtime_text"
+						zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
+							"$no_runtime_text")"
+						return 1
+					fi
 				fi
+				increment_progress 3
 			fi
-		else
-			echo "# Assuming .NET runtime is working."
 		fi
-		increment_progress
 
-		echo "# Checking registry."
+		echo "# Checking registry..."
 
 		user_reg="$WINEPREFIX/user.reg"
 		# This regex matches the section of the Wine "reg" registry file where the mod launcher stores
@@ -539,7 +523,7 @@ install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info.")"
 			fi
 
 			if [[ -d $shar_directory ]]; then
-				echo "# Configuring the mod launcher to use SHAR directory \"$shar_directory\"."
+				echo "# Configuring the mod launcher to use SHAR directory \"$shar_directory\"..."
 				reg=$prefix_lmlll_dir/lml_set_game_exe_path.reg
 				cat <<EOF >"$reg"
 REGEDIT4
@@ -563,12 +547,8 @@ may manually set the game path in the mod launcher interface.")"
 
 		# Finally, launch Wine with the mod launcher executable.
 
-		echo "# Launching launcher."
-
-		echo "# Finished."
-		# This should get the progress bar to 100%. If --auto-close is being used, the dialog will be
-		# closed at this point.
-		increment_progress
+		echo "# Finished!"
+		# At this point, the progress bar should be at 100%, and the dialog should have closed.
 		echo EOF
 
 		# Launch the mod launcher.
