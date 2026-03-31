@@ -136,8 +136,9 @@ function sanitize_zenity() {
 #	- Filtered /dev/stdin contents.
 # Returns:
 #	- 0 if successful.
-#	- 1 if an error occurred during the execution of the subshell.
-#	- 2 if EOF was never reached. This generally indicates that the process was cancelled.
+#	- 1 if EOF was never reached. This generally indicates that the process was cancelled.
+#   - 2 if the subshell "return code" isn't an integer.
+#	- Otherwise, returns whatever was the integer to be echoed after EOF.
 function zenity_echo() {
 	local ret=0
 	local eof_reached=false
@@ -161,19 +162,27 @@ function zenity_echo() {
 		elif [[ $line =~ ^\! ]]; then
 			info "${line#"! "}"
 		elif [[ $line =~ ^\? ]]; then
-			error "${line#"? "}"
+			text=${line#"? "}
+			error "$text"
+			zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity "$text")" ||
+				true
 		else
 			echo "$line"
 		fi
 	done </dev/stdin
-	info "Zenity has finished."
+	info "Subshell has finished."
 	# If EOF was never reached, then the cancel button was probably clicked. In that case, make sure
 	# this isn't considered a success.
 	if [[ $eof_reached == false ]]; then
 		error "EOF not reached. Either an error occurred in the subshell, or user cancelled."
 		ret=1
+	else
+		read -r ret
+		case "$ret" in
+		'' | *[!0-9]*) ret=2 ;;
+		esac
 	fi
-	return $ret
+	return "$ret"
 }
 
 # Runs a command, redirecting log output to a file or to stdout.
@@ -309,10 +318,7 @@ Exiting."
 			if [[ -z $cli_lml ]]; then
 				cli_lml=$arg
 			else
-				local -r multiple_exe_text="More than one EXE passed, ignoring."
-				info "$multiple_exe_text"
-				zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity \
-					"$multiple_exe_text")"
+				info "More than one EXE passed, ignoring extras."
 			fi
 		else
 			mod_launcher_args+=("$arg")
@@ -334,8 +340,7 @@ Exiting."
 		if [[ ! -f $mod_launcher_exe ]]; then
 			local -r noexe_text="EXE \"$mod_launcher_exe\" not found. Quitting."
 			error "$noexe_text"
-			zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity \
-				"$noexe_text")"
+			zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity "$noexe_text")"
 		fi
 	fi
 	info "Using mod launcher EXE \"$mod_launcher_exe\"."
@@ -388,10 +393,8 @@ You can also close this window and come back later."; then
 		local -r launcher_log="$log_dir/wine-$PACKAGE_NAME.log"
 
 		if [[ ! -f "$mod_launcher_exe" ]]; then
-			local -r notfound_text="Lucas' Simpsons Hit & Run Mod Launcher executable not found at \
+			echo "? Lucas' Simpsons Hit & Run Mod Launcher executable not found at \
 $mod_launcher_exe. The package may not be correctly installed."
-			zenity --title "Lucas' Simpsons Hit & Run Mod Launcher" --width 500 --error --text \
-				"$(sanitize_zenity "$notfound_text")"
 			return 1
 		fi
 
@@ -455,9 +458,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 					run "wine control.exe appwiz.cpl install_mono" "wine-mono"
 
 					if ! has_mono; then
-						zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
-							"Wine Mono still doesn't appear to be installed.")"
-						echo "# An error occured while initializing the Wine prefix."
+						echo "? Wine Mono still doesn't appear to be installed."
 						return 1
 					fi
 				fi
@@ -468,9 +469,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 					local -r winetricks_log="$log_dir/winetricks.log"
 					# This cannot use -q (see the .verb).
 					if ! run "winetricks \"$winetricks_verb\"" "$winetricks_log"; then
-						zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity "Failed to \
-install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info.")"
-						echo "# An error occured while initializing the Wine prefix."
+						echo "? Failed to install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info."
 						return 1
 					fi
 				fi
@@ -526,7 +525,7 @@ EOF
 				wine regedit "$reg"
 				rm "$reg"
 			else
-				zenity --width 500 --warning --text "$(sanitize_zenity "Failed to find SHAR directory to \
+				zenity "${zenity_common_arguments[@]}" --warning --text "$(sanitize_zenity "Failed to find SHAR directory to \
 	  use. To learn how to set this up, see the wiki: \
 https://gitlab.com/CodingKoopa/lml-linux-launcher/-/wikis/Game-Launcher#working-directories. You \
 may manually set the game path in the mod launcher interface.")"
@@ -546,10 +545,9 @@ may manually set the game path in the mod launcher interface.")"
 		# can already see them anyways.
 		if ! run "wine \"$mod_launcher_exe\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
 	${mod_launcher_args[*]}" "$launcher_log"; then
-			zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
-				"It looks like the launcher failed to start, or crashed. You may be able to fix this by rerunning this program to recreate the prefix.")"
 			# Queue safe-mode for the next time we launch.
 			touch "$broken_stamp"
+			echo "? It looks like the launcher failed to start, or crashed. You may be able to fix this by rerunning this program to recreate the prefix."
 			echo EOF
 			echo 1
 		else
