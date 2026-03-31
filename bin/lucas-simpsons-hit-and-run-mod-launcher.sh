@@ -540,15 +540,21 @@ may manually set the game path in the mod launcher interface.")"
 
 		echo "# Finished!"
 		# At this point, the progress bar should be at 100%, and the dialog should have closed.
-		echo EOF
 
 		# Launch the mod launcher.
 		# We don't have to pass a hacks directory because, the way the structure works out, the launcher
 		# can already see them anyways.
 		if ! run "wine \"$mod_launcher_exe\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
 	${mod_launcher_args[*]}" "$launcher_log"; then
-			# Indicate that something here is broken.
+			zenity "${zenity_common_arguments[@]}" --error --text "$(sanitize_zenity \
+				"It looks like the launcher failed to start, or crashed. You may be able to fix this by rerunning this program to recreate the prefix.")"
+			# Queue safe-mode for the next time we launch.
 			touch "$broken_stamp"
+			echo EOF
+			echo 1
+		else
+			echo EOF
+			echo 0
 		fi
 	) | tee >(zenity "${zenity_common_arguments[@]}" --progress --auto-close) |
 		zenity_echo
