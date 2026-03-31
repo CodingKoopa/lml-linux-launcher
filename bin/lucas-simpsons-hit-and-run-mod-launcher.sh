@@ -194,7 +194,18 @@ function run() {
 	local command=$1
 	local -r log_file=$2
 	if [[ $verbose == true ]]; then
-		eval "$command" | tee "$log_file"
+		# Big thanks to https://stackoverflow.com/a/30659751/5719930.
+		# Redirect fd4 to stdout.
+		exec 4>&1
+		local -r exit_status=$(
+			{
+				{
+					eval "$command"
+					echo $? 1>&3            # Print the exit code to fd3.
+				} | tee "$log_file" 1>&4 # Print stdin to fd4 = the real stdout.
+			} 3>&1                    # Redirect fd3 to the fake stdout capturing the exit status.
+		)
+		return "$exit_status"
 	else
 		eval "$command" &>"$log_file"
 	fi
