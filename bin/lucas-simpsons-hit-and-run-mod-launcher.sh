@@ -95,7 +95,7 @@ function version_compare_operator() {
 		return 2
 		;;
 	esac
-	if [[ $op = "$2" ]]; then
+	if [[ $op == "$2" ]]; then
 		return 0
 	else
 		return 1
@@ -147,12 +147,12 @@ function zenity_echo() {
 			continue
 		fi
 		# Break on the first EOF received.
-		if [[ $line = EOF ]]; then
+		if [[ $line == EOF ]]; then
 			eof_reached=true
 			break
 		fi
 		# Identify any error messages, as the return codes from the subshell are otherwise lost.
-		if [[ ${line,,} = error:* ]]; then
+		if [[ ${line,,} == error:* ]]; then
 			ret=1
 		fi
 		if [[ $line =~ ^\# ]]; then
@@ -169,7 +169,7 @@ function zenity_echo() {
 	info "Zenity has finished."
 	# If EOF was never reached, then the cancel button was probably clicked. In that case, make sure
 	# this isn't considered a success.
-	if [[ $eof_reached = false ]]; then
+	if [[ $eof_reached == false ]]; then
 		error "EOF not reached. Either an error occurred in the subshell, or user cancelled."
 		ret=1
 	fi
@@ -184,7 +184,7 @@ function zenity_echo() {
 function run() {
 	local command=$1
 	local -r log_file=$2
-	if [[ $log_to_stdout = true ]]; then
+	if [[ $log_to_stdout == true ]]; then
 		eval "$command"
 	else
 		eval "$command" &>"$log_file"
@@ -300,12 +300,12 @@ Exiting."
 	local cli_lml=""
 	for arg in "$@"; do
 		local extension=${arg##*.}
-		if [[ "$extension" = "lmlm" ]]; then
+		if [[ "$extension" == "lmlm" ]]; then
 			# By defualt, Wine maps the Z drive to "/" on the host filesystem.
 			mod_launcher_args+=(-mod Z:"$arg")
-		elif [[ "$extension" = "lmlh" ]]; then
+		elif [[ "$extension" == "lmlh" ]]; then
 			mod_launcher_args+=(-hack Z:"$arg")
-		elif [[ "$extension" = "exe" ]]; then
+		elif [[ "$extension" == "exe" ]]; then
 			if [[ -z $cli_lml ]]; then
 				cli_lml=$arg
 			else
@@ -355,8 +355,7 @@ Exiting."
 	# Indicator we place if things are broken.
 	broken_stamp=$prefix_lmlll_dir/broken.stamp
 
-	# Check this before entering the subshell so that we don't have multiple dialogs at
-	# once.
+	# Check this before entering the subshell so that we don't have multiple dialogs at once.
 	if [[ -f $broken_stamp ]]; then
 		if zenity "${zenity_common_arguments[@]}" --question --text \
 			"It looks like the launcher previously failed to start. Would you like to try recreating the Wine prefix?
@@ -404,7 +403,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 		# initializing.
 		local mono_possible=true
 		local winetricks_verb="$system_lml_directory/my_dotnet.verb"
-		if [[ $detect_version = true ]]; then
+		if [[ $detect_version == true ]]; then
 			# See: https://askubuntu.com/a/239722.
 			local -r mod_launcher_version=$(wrestool --extract --raw --type=version \
 				"$mod_launcher_exe" |
@@ -438,7 +437,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 
 		# If the user forced initialization via the "-i" argument, or there's no existing user data
 		# directory.
-		if [[ "$force_init" = true || ! -d "$WINEPREFIX" || ! -f $initialized_stamp ]]; then
+		if [[ "$force_init" == true || ! -d "$WINEPREFIX" || ! -f $initialized_stamp ]]; then
 			rm -rf "$WINEPREFIX"
 			mkdir -p "$prefix_lmlll_dir"
 
@@ -448,7 +447,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 			increment_progress
 
 			echo "# Looking for .NET runtime..."
-			if [[ $force_mono = true ]] && [[ $mono_possible = true ]]; then
+			if [[ $force_mono == true ]] && [[ $mono_possible == true ]]; then
 				if ! has_mono; then
 					increment_progress
 					echo "# Using Mono .NET runtime. <b>Click \"Install\" in the other window</b> if prompted!"
@@ -499,7 +498,7 @@ install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info.")"
 		# make a multiline pattern. However, unless Perl mode is used, \x00 can't be used to match a
 		# NUL. To get around this, "." is currently used to match the null character, but it might be
 		# better to convert the pattern to that of Perl's and properly match it.
-		if [[ $always_set_registry_key = true ]] || [[ ! -f $user_reg ]] ||
+		if [[ $always_set_registry_key == true ]] || [[ ! -f $user_reg ]] ||
 			! grep -Ezq "\[Software\\\\\\\\Lucas Stuff\\\\\\\\Lucas' Simpsons Hit & Run Tools\] \
 [0-9]{10}( [0-9]{7})*.\
 #time=([0-9]|[a-z]){15}.\

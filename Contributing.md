@@ -4,7 +4,14 @@ All files in this repository should use 2 spaces for a level of indentation.
 
 ## Bash
 
-For Bash scripts, the [Google Shell Style Guide](https://google.github.io/styleguide/shell.xml) should be followed. The exceptions to this reference are that `main` is not used in this repository, executable scripts should be named with kebab case, and commenting should be done as documented below.
+For Bash scripts, the [Google Shell Style Guide](https://google.github.io/styleguide/shell.xml) should be followed. The exceptions to this reference are:
+
+- Indent with tabs!
+- Unquoted variables that pass ShellCheck are okay.
+- Max line length is 100, not 80.
+- `main` is not used in this repository
+- Executable scripts should be named with kebab case
+- Commenting should be done as documented below.
 
 ### Function Documentation
 
