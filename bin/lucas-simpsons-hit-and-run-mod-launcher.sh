@@ -111,7 +111,7 @@ function version_compare_operator() {
 #	- (Optional) Number of steps to advance by. Defaults to 1.
 # Outputs:
 #	- The percentage.
-function increment_progress() {
+function advance_progress() {
 	inc=${1:-1}
 	((step += inc))
 	# If the multiplication by 100 is done first, then the decimal number will be truncated to 0.
@@ -129,7 +129,7 @@ function sanitize_zenity() {
 }
 
 # Echos output originally intended for Zenity. This function filters out percentages from
-# increment_progress(), as well as the "# " prefix. This function also handles errors that arrise
+# advance_progress(), as well as the "# " prefix. This function also handles errors that arrise
 # during the execution of the subshell, or from the cancel button being clicked. Finally, this
 # handles our own "! " and "? " prefixes.
 # Outputs:
@@ -431,7 +431,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 				winetricks_verb=dotnet35sp1
 			fi
 		fi
-		increment_progress
+		advance_progress
 
 		# Then, initialize the Wine prefix if we have to.
 
@@ -444,12 +444,12 @@ $mod_launcher_exe. The package may not be correctly installed."
 			echo "# Creating Wine prefix..."
 			# Thanks: https://wiki.archlinux.org/title/Wine#Prevent_installing_Mono/Gecko.
 			run "WINEDLLOVERRIDES=\"mshtml=d;mscoree=d\" wineboot && wineserver -w" "$wineboot_log"
-			increment_progress
+			advance_progress
 
 			echo "# Looking for .NET runtime..."
 			if [[ $force_mono == true ]] && [[ $mono_possible == true ]]; then
 				if ! has_mono; then
-					increment_progress
+					advance_progress
 					echo "# Using Mono .NET runtime. <b>Click \"Install\" in the other window</b> if prompted!"
 					# Thanks: https://github.com/Winetricks/winetricks/issues/1236#issuecomment-2145954802
 					run "wine control.exe appwiz.cpl install_mono" "wine-mono"
@@ -463,7 +463,7 @@ $mod_launcher_exe. The package may not be correctly installed."
 				fi
 			else
 				if ! has_dotnet; then
-					increment_progress
+					advance_progress
 					echo "# Installing the Microsoft .NET runtime. You'll see some more progress windows pop up soon!"
 					local -r winetricks_log="$log_dir/winetricks.log"
 					# This cannot use -q (see the .verb).
@@ -476,9 +476,9 @@ install the Microsoft .NET runtime. See \"${winetricks_log}\" for more info.")"
 				fi
 			fi
 			touch "$initialized_stamp"
-			increment_progress
+			advance_progress
 		else
-			increment_progress 3
+			advance_progress 3
 		fi
 
 		echo "# Checking registry..."
@@ -534,7 +534,7 @@ may manually set the game path in the mod launcher interface.")"
 		else
 			echo "! SHAR path is already configured."
 		fi
-		increment_progress
+		advance_progress
 
 		# Finally, launch Wine with the mod launcher executable.
 
