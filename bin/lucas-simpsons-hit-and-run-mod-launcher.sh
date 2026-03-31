@@ -187,14 +187,14 @@ function zenity_echo() {
 
 # Runs a command, redirecting log output to a file or to stdout.
 # Variables Read:
-#	- log_to_stdout: Whether to log to stdout.
+#	- verbose: Whether to log to stdout.
 # Outputs:
-#	- Command output, if $log_to_stdout=true.
+#	- Command output, if $verbose=true.
 function run() {
 	local command=$1
 	local -r log_file=$2
-	if [[ $log_to_stdout == true ]]; then
-		eval "$command"
+	if [[ $verbose == true ]]; then
+		eval "$command" | tee "$log_file"
 	else
 		eval "$command" &>"$log_file"
 	fi
@@ -208,7 +208,7 @@ function print_help() {
 Launches Lucas' Simpsons Hit & Run Mod Launcher via Wine.
 
   -h    Show this help message and exit.
-  -l    Enable logging of Wine and Winetricks to stdout rather than to the log files.
+  -v    Enable logging of Wine and Winetricks to stdout, in addition to the log files.
   -i    Force the recreation + initialization of the Wine prefix.
   -d    If initializing, force the deletion of the existing prefix, if present.
   -m    Use Wine Mono rather than Microsoft .NET. Quicker installation, but slightly buggier UI.
@@ -267,21 +267,21 @@ Exiting."
 		--width 500
 	)
 
-	local log_to_stdout=false
+	local verbose=false
 	local force_init=false
 	local always_set_registry_key=false
 	local force_mono=false
 	local -a mod_launcher_args
 
-	while getopts "hlirmo:" opt; do
+	while getopts "hvirmo:" opt; do
 		case $opt in
 		h)
 			# Bail earlier than the default case.
 			print_help
 			return 0
 			;;
-		l)
-			log_to_stdout=true
+		v)
+			verbose=true
 			;;
 		i)
 			force_init=true
@@ -537,12 +537,13 @@ may manually set the game path in the mod launcher interface.")"
 
 		# Finally, launch Wine with the mod launcher executable.
 
-		echo "# Finished!"
+		echo "# Starting launcher!"
 		# At this point, the progress bar should be at 100%, and the dialog should have closed.
 
 		# Launch the mod launcher.
 		# We don't have to pass a hacks directory because, the way the structure works out, the launcher
 		# can already see them anyways.
+		verbose=true
 		if ! run "wine \"$mod_launcher_exe\" -mods Z:/usr/share/\"$PACKAGE_NAME\"/mods/ \
 	${mod_launcher_args[*]}" "$launcher_log"; then
 			# Queue safe-mode for the next time we launch.
